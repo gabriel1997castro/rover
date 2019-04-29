@@ -28,6 +28,9 @@
 #include "rover/sensoray526.h"
 #include "rover/SSC.h"
 
+#include "ros/ros.h"
+#include "rover/WheelVel.h"
+
 
 FILE *logFile;
 
@@ -112,6 +115,73 @@ int readEncoder(void)
 //---------------------------------------------------------------------------------------------------------
 
 // Calcula a velocidade das rodas em rad/s
+void computeVel(int argc,char **argv)
+{
+	float texec;
+	unsigned char counter = 0;
+	long n0 = 0;
+	long n1 = 0;
+    // Initiate new ROS node named "vel_pub"
+	ros::init(argc, argv, "vel_pub");
+
+    //create a node handle: it is reference assigned to a new node
+	ros::NodeHandle n;
+    //create a publisher with a topic "wheels_velocity" that will send a String message
+	ros::Publisher wheels_velocity_publisher = n.advertise<rover::WheelVel>("wheels_velocity", 10);
+	//Rate is a class the is used to define frequency for a loop. Here we send a message each two seconds.
+	ros::Rate loop_rate(1); //1 message per second
+
+	sensoray526_configure_encoder(0);
+	sensoray526_configure_encoder(1);
+
+	while (ros::ok())
+	{
+        //create a wheelVel message
+        rover::WheelVel vel;
+		sensoray526_reset_counter(0);
+		sensoray526_reset_counter(1);
+		tic();
+
+		// Sleep
+		usleep(100000);
+
+		n0 = sensoray526_read_counter(0); //n of pulses encoder 0
+		n1 = sensoray526_read_counter(1); //n of pulses encoder 1
+		texec = toc();
+		vel.left_wheels = (0.0020943952 * n0) / texec; // (2 * pi) / (100 cycles * 30) = const = 0.0020943952
+        vel.right_wheels = (0.0020943952 * n1) / texec;
+
+        //Publish the message
+        wheels_velocity_publisher.publish(vel);
+        ros::spinOnce(); // Need to call this function often to allow ROS to process incoming messages
+
+        loop_rate.sleep(); // Sleep for the rest of the cycle, to enforce the loop rate
+	}
+}
+
+//---------------------------------------------------------------------------------------------------------
+int main(int argc, char **argv)
+{
+    // Cadastra funções para encerrar o programa
+    signal(SIGTERM, signalHandler);
+    signal(SIGINT, signalHandler);
+
+    // Avoids memory swapping for this program
+    mlockall(MCL_CURRENT | MCL_FUTURE);
+
+    // robot module:
+    printf("\n*** Iniciando o modulo sensoray526...");
+    MAIN_MODULE_INIT(sensoray526_init());
+    
+    computeVel(argc, argv);
+
+    fflush(stdout); // mostra todos printfs pendentes.
+    return 0;
+}
+
+
+/*
+// Calcula a velocidade das rodas em rad/s
 void computeVel(void)
 {
     float texec;
@@ -134,7 +204,7 @@ void computeVel(void)
     sensoray526_configure_encoder(1);
     while (true)
     {
-	prinf("asdasdafsdfasdasdfasdfasdfasdfasdfasdfasd\n");
+	printf("asdasdafsdfasdasdfasdfasdfasdfasdfasdfasd\n");
         sensoray526_reset_counter(0);
         sensoray526_reset_counter(1);
         tic();
@@ -151,23 +221,5 @@ void computeVel(void)
 	prinf("cccccccccccccccccccccccccccccc\n");
     }
 }
-//---------------------------------------------------------------------------------------------------------
-int main()
-{
-    // Cadastra funções para encerrar o programa
-    signal(SIGTERM, signalHandler);
-    signal(SIGINT, signalHandler);
 
-    // Avoids memory swapping for this program
-    mlockall(MCL_CURRENT | MCL_FUTURE);
-
-    // robot module:
-    printf("\n*** Iniciando o modulo sensoray526...");
-    MAIN_MODULE_INIT(sensoray526_init());
-
-    prinf("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n");
-    computeVel();
-    prinf("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\n");
-    fflush(stdout); // mostra todos printfs pendentes.
-    return 0;
-}
+*/

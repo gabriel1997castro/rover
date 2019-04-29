@@ -77,7 +77,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## Generate messages in the 'msg' folder
 add_message_files(
 FILES
-Wheel_vel.msg
+WheelVel.msg
 )
 
 ## Generate services in the 'srv' folder
@@ -95,10 +95,10 @@ Wheel_vel.msg
 # )
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   geometry_msgs#   std_msgs
-# )
+generate_messages(
+DEPENDENCIES
+geometry_msgs#   std_msgs
+)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -243,6 +243,7 @@ target_link_libraries(motion
     -pthread
     sensoray526
     SSC
+    ${catkin_LIBRARIES}
 )
 
 target_link_libraries(velocity
@@ -250,4 +251,5 @@ target_link_libraries(velocity
     -pthread
     sensoray526
     SSC
+    ${catkin_LIBRARIES}
 )
