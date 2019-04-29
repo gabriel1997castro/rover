@@ -1,0 +1,25 @@
+{
+    "configurations": [
+        {
+            "browse": {
+                "databaseFilename": "",
+                "limitSymbolsToIncludedHeaders": true
+            },
+            "includePath": [
+                "/home/work/catkin_ws/devel/include",
+                "/opt/ros/kinetic/include",
+                "/home/work/catkin_ws/src/ros_basics_tutorials/include",
+                "/home/work/catkin_ws/src/ros_essentials_cpp/include",
+                "/home/work/catkin_ws/src/rover/include",
+                "/home/work/catkin_ws/src/udemy_ros/include",
+                "/usr/include"
+            ],
+            "name": "Linux",
+            "intelliSenseMode": "gcc-x64",
+            "compilerPath": "/usr/bin/gcc",
+            "cStandard": "c11",
+            "cppStandard": "c++17"
+        }
+    ],
+    "version": 4
+}
