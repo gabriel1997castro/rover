@@ -74,7 +74,7 @@ void signalHandler(int signum)
 {
     std::cout << "Interrupt signal (" << signum << ") received.\n";
     bag.close();
-    usleep(3000000)
+    usleep(3000000);
     printf("\n*** Encerrando o modulo sensoray526...");
     MAIN_MODULE_CLOSE(sensoray526_close());
     printf("\n\n");
