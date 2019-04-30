@@ -73,10 +73,9 @@ double toc(void)
 void signalHandler(int signum)
 {
     std::cout << "Interrupt signal (" << signum << ") received.\n";
-
+    bag.close();
     printf("\n*** Encerrando o modulo sensoray526...");
     MAIN_MODULE_CLOSE(sensoray526_close());
-    bag.close();
     printf("\n\n");
     fflush(stdout); // mostra todos printfs pendentes.
 
@@ -144,7 +143,7 @@ void computeVel(int argc,char **argv)
 		tic();
 
 		// Sleep
-		usleep(100000);
+		usleep(50000);
 
 		n0 = sensoray526_read_counter(0); //n of pulses encoder 0
 		n1 = sensoray526_read_counter(1); //n of pulses encoder 1
@@ -154,7 +153,7 @@ void computeVel(int argc,char **argv)
         //Publish the message
         wheels_velocity_publisher.publish(vel);
 
-        bag.write("wheels_velocity", ros::Time::now(), vel);
+        bag.write("wheels_velocity", ros::Time::now(), vel.left_wheels);
         //bag.write("right_wheel", ros::Time::now(), vel.right_wheels);
 
         ros::spinOnce(); // Need to call this function often to allow ROS to process incoming messages
