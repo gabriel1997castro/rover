@@ -28,11 +28,9 @@
 #include "rover/sensoray526.h"
 #include "rover/SSC.h"
 
+#include <rosbag/bag.h>
 #include "ros/ros.h"
 #include "rover/WheelVel.h"
-
-
-FILE *logFile;
 
 // Definicoes internas:
 #define MAIN_MODULE_INIT(cmd_init)           \
@@ -46,6 +44,8 @@ FILE *logFile;
     {                                         \
         printf("    Erro em %s", #cmd_close); \
     }
+
+rosbag::Bag bag;
 
 // Definições para usar tic e toc pra cálculos de tempo
 //---------------------------------------------------------------------------------------------------------
@@ -69,9 +69,6 @@ double toc(void)
 
 //---------------------------------------------------------------------------------------------------------
 
-//void catch_signal(int sig)
-//{
-//}
 
 void signalHandler(int signum)
 {
@@ -79,7 +76,7 @@ void signalHandler(int signum)
 
     printf("\n*** Encerrando o modulo sensoray526...");
     MAIN_MODULE_CLOSE(sensoray526_close());
-    fclose(logFile);
+    bag.close();
     printf("\n\n");
     fflush(stdout); // mostra todos printfs pendentes.
 
@@ -121,6 +118,10 @@ void computeVel(int argc,char **argv)
 	unsigned char counter = 0;
 	long n0 = 0;
 	long n1 = 0;
+
+    //Abre rosbag em modo de escrita para guardar log
+    bag.open("test.bag", rosbag::bagmode::Write);
+
     // Initiate new ROS node named "vel_pub"
 	ros::init(argc, argv, "vel_pub");
 
@@ -150,9 +151,12 @@ void computeVel(int argc,char **argv)
 		texec = toc();
 		vel.left_wheels = (0.0020943952 * n0) / texec; // (2 * pi) / (100 cycles * 30) = const = 0.0020943952
         vel.right_wheels = (0.0020943952 * n1) / texec;
-
         //Publish the message
         wheels_velocity_publisher.publish(vel);
+
+        bag.write("velocities", ros::Time::now(), vel);
+        //bag.write("right_wheel", ros::Time::now(), vel.right_wheels);
+
         ros::spinOnce(); // Need to call this function often to allow ROS to process incoming messages
 
         loop_rate.sleep(); // Sleep for the rest of the cycle, to enforce the loop rate
@@ -160,6 +164,19 @@ void computeVel(int argc,char **argv)
 }
 
 //---------------------------------------------------------------------------------------------------------
+
+//Conversões de intervalos [-1, 1] e [500 2500]
+float PIDToSSC(float value)
+{
+    return (value*1000 + 1500);
+}
+float SSCtoPID(float value)
+{
+    return (0.001*value + 1.5);
+}
+
+//---------------------------------------------------------------------------------------------------------
+
 int main(int argc, char **argv)
 {
     // Cadastra funções para encerrar o programa

@@ -39,6 +39,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
   message_generation
+  rosbag  
 )
 
 ## System dependencies are found with CMake's conventions
@@ -132,7 +133,7 @@ geometry_msgs#   std_msgs
 catkin_package(
 INCLUDE_DIRS include
 LIBRARIES Rover
-CATKIN_DEPENDS geometry_msgs roscpp std_msgs message_runtime
+CATKIN_DEPENDS geometry_msgs roscpp std_msgs message_runtime rosbag
 DEPENDS system_lib
 )
 
