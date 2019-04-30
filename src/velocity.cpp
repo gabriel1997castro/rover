@@ -130,7 +130,7 @@ void computeVel(int argc,char **argv)
     //create a publisher with a topic "wheels_velocity" that will send a String message
 	ros::Publisher wheels_velocity_publisher = n.advertise<rover::WheelVel>("wheels_velocity", 10);
 	//Rate is a class the is used to define frequency for a loop. Here we send a message each two seconds.
-	ros::Rate loop_rate(1); //1 message per second
+	ros::Rate loop_rate(10); //1 message per second
 
 	sensoray526_configure_encoder(0);
 	sensoray526_configure_encoder(1);
@@ -154,8 +154,7 @@ void computeVel(int argc,char **argv)
         //Publish the message
         wheels_velocity_publisher.publish(vel);
 
-        bag.write("wheels_velocity", ros::Time::now(), vel.left_wheels);
-        //bag.write("right_wheel", ros::Time::now(), vel.right_wheels);
+        bag.write("wheels_velocity", ros::Time::now(), vel);
 
         ros::spinOnce(); // Need to call this function often to allow ROS to process incoming messages
 
