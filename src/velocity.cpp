@@ -154,7 +154,7 @@ void computeVel(int argc,char **argv)
         //Publish the message
         wheels_velocity_publisher.publish(vel);
 
-        bag.write("velocities", ros::Time::now(), vel);
+        bag.write("wheels_velocity", ros::Time::now(), vel);
         //bag.write("right_wheel", ros::Time::now(), vel.right_wheels);
 
         ros::spinOnce(); // Need to call this function often to allow ROS to process incoming messages
