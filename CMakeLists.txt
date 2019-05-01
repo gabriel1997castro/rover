@@ -235,6 +235,16 @@ install(FILES src/sensoray526.h DESTINATION include)
 install(TARGETS SSC DESTINATION lib)
 install(FILES src/SSC.h DESTINATION include)
 
+
+add_executable(stopWheels src/stop_wheels.cpp src/SSC.c)
+add_dependencies(stopWheels serialcom)
+target_link_libraries(stopWheels
+    ${binary_dir}/${CMAKE_FIND_LIBRARY_PREFIXES}serialcomlib.so
+    -pthread
+    SSC
+    ${catkin_LIBRARIES}
+)
+
 add_executable(motion src/motion.cpp src/SSC.c)
 add_dependencies(motion serialcom)
 target_link_libraries(motion
