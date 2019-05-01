@@ -160,10 +160,14 @@ void computeVel()
 
 //---------------------------------------------------------------------------------------------------------
 
+/*int invEscale(int value)
+{
+    
+}*/
 //Conversões de intervalos [-1, 1] e [500 2500]
 std::string PIDToSSC(float value)
 {
-    int ssc = ((int)value*1000+1500);
+    int ssc = (int)(25*value+1500);
     if (ssc > SSC_MAX)
     {
         ssc = SSC_MAX;
