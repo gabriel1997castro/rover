@@ -176,7 +176,7 @@ std::string PIDToSSC(float value)
     {
          ssc = SSC_MIN;
     }
-    return ToString(invEscale(ssc);
+    return ToString(invEscale(ssc));
 }
 //---------------------------------------------------------------------------------------------------------
 
