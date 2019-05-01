@@ -92,7 +92,11 @@ std::string ToString(T val)
 }
 
 void signalHandler(int signum)
-{
+{   
+    std::string command;
+    std::s
+    command = "#0 P1500 #1 P1500";
+	sendCommand(command.c_str());
     std::cout << "Interrupt signal (" << signum << ") received.\n";
     printf("\n*** Encerrando o modulo sensoray526...");
     MAIN_MODULE_CLOSE(sensoray526_close());
