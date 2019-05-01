@@ -15,7 +15,6 @@
 #include <ctime>
 #include <errno.h>
 #include <stdlib.h>
-//#include <signal.h>
 #include <csignal>
 #include <sys/io.h>
 #include <sys/time.h>
@@ -26,8 +25,27 @@
 #include <iostream>
 #include <sys/select.h>
 #include "rover/sensoray526.h"
+#include "rover/SSC.h"
 #include "ros/ros.h"
 #include "rover/WheelVel.h"
+#include "rover/SSC.h"
+
+//PID constants
+double kp = 1;
+double ki = 0;
+double kd = 0;
+ 
+double currentTime, previousTime;
+double elapsedTime;
+double error;
+double lastError;
+double input, output, setPoint = 5;
+double cumError, rateError;
+double pidLeft, pidRight;
+rover::WheelVel vel;
+
+#define SSC_MAX 2500
+#define SSC_MIN 500
 
 // Definicoes internas:
 #define MAIN_MODULE_INIT(cmd_init)           \
@@ -41,7 +59,6 @@
     {                                         \
         printf("    Erro em %s", #cmd_close); \
     }
-
 
 // Definições para usar tic e toc pra cálculos de tempo
 //---------------------------------------------------------------------------------------------------------
@@ -76,97 +93,80 @@ void signalHandler(int signum)
 
     exit(signum);
 }
-//
 //---------------------------------------------------------------------------------------------------------
 
-//Lê os encoder por mais ou menos 1s
-int readEncoder(void)
-{
-    float texec;
-    unsigned char counter = 0;
-    //Configura encoder 0
-    sensoray526_configure_encoder(0);
-    sensoray526_configure_encoder(1);
-    sensoray526_reset_counter(0);
-    sensoray526_reset_counter(1);
-    tic();
-    for (counter = 0; counter < 10; counter++)
-    {
-        //Le o encoder 0
-        printf("\n Encoder 0: (%ld)", sensoray526_read_counter(0));
-        printf("\n Encoder 1: (%ld)", sensoray526_read_counter(1));
 
-        // Sleep
-        usleep(100000);
-    }
-    texec = toc(); //us
-    printf("\nRead encoder took %f seconds to execute \n", texec * 1e6);
-    return 1;
+//
+float computePID(double inp)
+{
+    currentTime =  ros::Time::now().toSec(); // tempo atual
+    elapsedTime = (double)(currentTime - previousTime);//tempo gasto
+        
+    error = setPoint - inp; // determine error / proporcional
+    cumError += error * elapsedTime; // calcula integral
+    rateError = (error - lastError)/elapsedTime; // calcula derivada
+ 
+    double out = kp*error + ki*cumError + kd*rateError; //PID output               
+ 
+    lastError = error;                                //remember current error
+    previousTime = currentTime;                        //remember current time
+ 
+    return out;                                        //have function return the PID output
+}
+
+float computeLR_PID()
+{
+    pidLeft = computePID(vel.left_wheels);
+    pidRight = computePID(vel.right_wheels);
 }
 //---------------------------------------------------------------------------------------------------------
 
 // Calcula a velocidade das rodas em rad/s
-void computeVel(int argc,char **argv)
+void computeVel()
 {
 	float texec;
 	unsigned char counter = 0;
 	long n0 = 0;
 	long n1 = 0;
 
-    // Initiate new ROS node named "vel_pub"
-	ros::init(argc, argv, "vel_pub");
-
-    //create a node handle: it is reference assigned to a new node
-	ros::NodeHandle n;
-    //create a publisher with a topic "wheels_velocity" that will send a String message
-	ros::Publisher wheels_velocity_publisher = n.advertise<rover::WheelVel>("wheels_velocity", 10);
-	//Rate is a class the is used to define frequency for a loop. Here we send a message each two seconds.
-	ros::Rate loop_rate(10); //1 message per second
-
 	sensoray526_configure_encoder(0);
 	sensoray526_configure_encoder(1);
 
-	while (ros::ok())
-	{
-        //create a wheelVel message
-        rover::WheelVel vel;
-		sensoray526_reset_counter(0);
-		sensoray526_reset_counter(1);
-		tic();
+	sensoray526_reset_counter(0);
+	sensoray526_reset_counter(1);
+	tic();
 
-		// Sleep
-		usleep(50000);
+	// Sleep
+	usleep(100000);
 
-		n0 = sensoray526_read_counter(0); //n of pulses encoder 0
-		n1 = -sensoray526_read_counter(1); //n of pulses encoder 1
-		texec = toc();
-		vel.right_wheels = (0.0020943952 * n0) / texec; // (2 * pi) / (100 cycles * 30) = const = 0.0020943952
-        vel.left_wheels = (0.0020943952 * n1) / texec;
-        //Publish the message
-        wheels_velocity_publisher.publish(vel);
-
-        ros::spinOnce(); // Need to call this function often to allow ROS to process incoming messages
-
-        loop_rate.sleep(); // Sleep for the rest of the cycle, to enforce the loop rate
-	}
+	n0 = sensoray526_read_counter(0); //n of pulses encoder 0
+	n1 = -sensoray526_read_counter(1); //n of pulses encoder 1
+	texec = toc();
+	vel.right_wheels = (0.0020943952 * n0) / texec; // (2 * pi) / (100 cycles * 30) = const = 0.0020943952
+    vel.left_wheels = (0.0020943952 * n1) / texec;
 }
 
 //---------------------------------------------------------------------------------------------------------
 
 //Conversões de intervalos [-1, 1] e [500 2500]
-float PIDToSSC(float value)
+std::string PIDToSSC(float value)
 {
-    return (value*1000 + 1500);
+    int ssc = ((int)value*1000+1500);
+    if (ssc > SSC_MAX)
+    {
+        ssc = SSC_MAX;
+    }
+    if (ssc < SSC_MIN)
+    {
+         ssc = SSC_MIN;
+    }
+    return std::to_string(ssc);
 }
-float SSCtoPID(float value)
-{
-    return (0.001*value + 1.5);
-}
-
 //---------------------------------------------------------------------------------------------------------
 
 int main(int argc, char **argv)
 {
+    std::string command;
     // Cadastra funções para encerrar o programa
     signal(SIGTERM, signalHandler);
     signal(SIGINT, signalHandler);
@@ -177,8 +177,16 @@ int main(int argc, char **argv)
     // robot module:
     printf("\n*** Iniciando o modulo sensoray526...");
     MAIN_MODULE_INIT(sensoray526_init());
+    command = "#1 P1500 #1 P1500";
+    while(true)
+    {
+        sendCommand(command.c_str());
+        computeVel();
+        computeLR_PID();
+        command = "#0P" + PIDToSSC(pidRight) + " #1P" + PIDToSSC(pidLeft);
+        sendCommand(command.c_str()); 
+    }
     
-    computeVel(argc, argv);
 
     fflush(stdout); // mostra todos printfs pendentes.
     return 0;
