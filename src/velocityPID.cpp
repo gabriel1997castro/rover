@@ -184,7 +184,8 @@ int main(int argc, char **argv)
 
     // Avoids memory swapping for this program
     mlockall(MCL_CURRENT | MCL_FUTURE);
-
+    
+    ros::Time::init();
     // robot module:
     printf("\n*** Iniciando o modulo sensoray526...");
     MAIN_MODULE_INIT(sensoray526_init());
