@@ -189,7 +189,7 @@ int main(int argc, char **argv)
     // robot module:
     printf("\n*** Iniciando o modulo sensoray526...");
     MAIN_MODULE_INIT(sensoray526_init());
-    command = "#1 P1500 #1 P1500";
+    command = "#1 P1600 #1 P1600";
     while(true)
     {
         sendCommand(command.c_str());
