@@ -46,8 +46,8 @@ double cumError, rateError;
 double pidLeft, pidRight;
 rover::WheelVel vel;
 
-#define SSC_MAX 2500
-#define SSC_MIN 500
+#define SSC_MAX 2000
+#define SSC_MIN 1000
 
 // Definicoes internas:
 #define MAIN_MODULE_INIT(cmd_init)           \
