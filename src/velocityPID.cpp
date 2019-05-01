@@ -30,6 +30,7 @@
 #include "rover/WheelVel.h"
 #include "rover/SSC.h"
 #include <sstream>
+#include <iostream>
 
 //PID constants
 double kp = 1;
@@ -189,13 +190,14 @@ int main(int argc, char **argv)
     // robot module:
     printf("\n*** Iniciando o modulo sensoray526...");
     MAIN_MODULE_INIT(sensoray526_init());
-    command = "#1 P1600 #1 P1600";
+    command = "#0 P1600 #1 P1600";
     while(true)
     {
         sendCommand(command.c_str());
         computeVel();
         computeLR_PID();
         command = "#0P" + PIDToSSC(pidRight) + " #1P" + PIDToSSC(pidLeft);
+        std::cout << command << std::endl;
         sendCommand(command.c_str()); 
     }
     
