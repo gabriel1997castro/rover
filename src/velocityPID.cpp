@@ -29,6 +29,7 @@
 #include "ros/ros.h"
 #include "rover/WheelVel.h"
 #include "rover/SSC.h"
+#include <sstream>
 
 //PID constants
 double kp = 1;
@@ -82,6 +83,13 @@ double toc(void)
 
 //---------------------------------------------------------------------------------------------------------
 
+template <typename T>
+std::string ToString(T val)
+{
+    std::stringstream stream;
+    stream << val;
+    return stream.str();
+}
 
 void signalHandler(int signum)
 {
@@ -160,7 +168,7 @@ std::string PIDToSSC(float value)
     {
          ssc = SSC_MIN;
     }
-    return std::to_string(ssc);
+    return ToString(ssc);
 }
 //---------------------------------------------------------------------------------------------------------
 
