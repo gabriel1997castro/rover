@@ -46,6 +46,7 @@ double cumError, rateError;
 //double pidLeft, pidRight;
 rover::WheelVel vel;
 rover::WheelVel pid;
+rover::WheelVel inp;
 
 #define SSC_MAX 2000
 #define SSC_MIN 1000
@@ -197,7 +198,7 @@ int main(int argc, char **argv)
     MAIN_MODULE_INIT(sensoray526_init());
     command = "#0 P1500 #1 P1500";
 
-    setPoint = 5;
+    setPoint = 7;
     int count = 0;
     float tempo;
 
@@ -210,11 +211,15 @@ int main(int argc, char **argv)
     //create a publisher with a topic "wheels_velocity" that will send a String message
 	ros::Publisher wheels_velocity_publisher = n.advertise<rover::WheelVel>("wheels_velocity", 10);
 
-    ros::Publisher pid_velocity_publisher = n.advertise<rover::WheelVel>("pid_velocity", 10);
+    //ros::Publisher pid_velocity_publisher = n.advertise<rover::WheelVel>("pid_velocity", 10);
+    ros::Publisher inp_velocity_publisher = n.advertise<rover::WheelVel>("inp_velocity", 10);
 	//Rate is a class the is used to define frequency for a loop. Here we send a message each two seconds.
 	ros::Rate loop_rate(10); //1 message per second
 
     sendCommand(command.c_str());
+    inp.left_wheels = 0;
+    inp.right_wheels = 0;
+    inp_velocity_publisher.publish(inp);
     while(ros::ok())
     {
         if(count == 0)
@@ -227,17 +232,20 @@ int main(int argc, char **argv)
         wheels_velocity_publisher.publish(vel);
 
         computeLR_PID();
-        pid_velocity_publisher.publish(pid);
+        
         command = "#0P" + PIDToSSC(pid.right_wheels) + " #1P" + PIDToSSC(pid.left_wheels);
         std::cout << command << std::endl;
         sendCommand(command.c_str());
         tempo += toc();
         tic();
-        if(tempo >= 8)
+        if(tempo >= 6)
         {
-            setPoint *= 0;
+            setPoint *= -1;
             count = 0;
             tempo = 0;
+            inp.left_wheels = setPoint;
+            inp.right_wheels = setPoint;
+            inp_velocity_publisher.publish(inp);
         }
         ros::spinOnce(); // Need to call this function often to allow ROS to process incoming messages
 
