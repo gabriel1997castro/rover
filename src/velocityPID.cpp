@@ -41,7 +41,7 @@ double currentTime, previousTime;
 double elapsedTime;
 double error;
 double lastError;
-double input, output, setPoint = 3;
+double input, output, setPoint = 0;
 double cumError, rateError;
 double pidLeft, pidRight;
 rover::WheelVel vel;
@@ -195,14 +195,30 @@ int main(int argc, char **argv)
     printf("\n*** Iniciando o modulo sensoray526...");
     MAIN_MODULE_INIT(sensoray526_init());
     command = "#0 P1500 #1 P1500";
+
+    setPoint = 5;
+    int count = 0;
+    float tempo;
     while(true)
     {
+        if(count = 0)
+        {
+            tic();
+            count++;
+        }
         sendCommand(command.c_str());
         computeVel();
         computeLR_PID();
         command = "#0P" + PIDToSSC(pidRight) + " #1P" + PIDToSSC(pidLeft);
         std::cout << command << std::endl;
-        sendCommand(command.c_str()); 
+        sendCommand(command.c_str());
+        tempo += toc();
+        tic();
+        if(tempo >= 5)
+        {
+            setPoint *= -1;
+            count = 0;
+        }
     }
     
 
