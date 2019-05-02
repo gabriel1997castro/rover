@@ -218,6 +218,7 @@ int main(int argc, char **argv)
         {
             setPoint *= -1;
             count = 0;
+            tempo = 0;
         }
     }
     
