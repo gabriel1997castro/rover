@@ -43,8 +43,9 @@ double error;
 double lastError;
 double input, output, setPoint = 0;
 double cumError, rateError;
-double pidLeft, pidRight;
+//double pidLeft, pidRight;
 rover::WheelVel vel;
+rover::WheelVel pid;
 
 #define SSC_MAX 2000
 #define SSC_MIN 1000
@@ -128,8 +129,8 @@ float computePID(double inp)
 
 float computeLR_PID()
 {
-    pidLeft = computePID(vel.left_wheels);
-    pidRight = computePID(vel.right_wheels);
+    pid.left_wheels = computePID(vel.left_wheels);
+    pid.right_wheels = computePID(vel.right_wheels);
 }
 //---------------------------------------------------------------------------------------------------------
 
@@ -208,6 +209,8 @@ int main(int argc, char **argv)
 	ros::NodeHandle n;
     //create a publisher with a topic "wheels_velocity" that will send a String message
 	ros::Publisher wheels_velocity_publisher = n.advertise<rover::WheelVel>("wheels_velocity", 10);
+
+    ros::Publisher pid_velocity_publisher = n.advertise<rover::WheelVel>("pid_velocity", 10);
 	//Rate is a class the is used to define frequency for a loop. Here we send a message each two seconds.
 	ros::Rate loop_rate(10); //1 message per second
 
@@ -224,7 +227,8 @@ int main(int argc, char **argv)
         wheels_velocity_publisher.publish(vel);
 
         computeLR_PID();
-        command = "#0P" + PIDToSSC(pidRight) + " #1P" + PIDToSSC(pidLeft);
+        pid_velocity_publisher.publish(pid);
+        command = "#0P" + PIDToSSC(pid.right_wheels) + " #1P" + PIDToSSC(pid.left_wheels);
         std::cout << command << std::endl;
         sendCommand(command.c_str());
         tempo += toc();
