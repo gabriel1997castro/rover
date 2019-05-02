@@ -235,7 +235,7 @@ int main(int argc, char **argv)
         tic();
         if(tempo >= 14000)
         {
-            setPoint ++;
+            //setPoint *= -1;
             count = 0;
             tempo = 0;
         }
