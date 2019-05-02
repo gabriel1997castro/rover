@@ -149,7 +149,7 @@ void computeVel()
 	tic();
 
 	// Sleep
-	usleep(100000);
+	usleep(40000);
 
 	n0 = sensoray526_read_counter(0); //n of pulses encoder 0
 	n1 = -sensoray526_read_counter(1); //n of pulses encoder 1
@@ -199,15 +199,32 @@ int main(int argc, char **argv)
     setPoint = 5;
     int count = 0;
     float tempo;
-    while(true)
+
+
+    // Initiate new ROS node named "vel_pub"
+	ros::init(argc, argv, "vel_pub");
+
+    //create a node handle: it is reference assigned to a new node
+	ros::NodeHandle n;
+    //create a publisher with a topic "wheels_velocity" that will send a String message
+	ros::Publisher wheels_velocity_publisher = n.advertise<rover::WheelVel>("wheels_velocity", 10);
+	//Rate is a class the is used to define frequency for a loop. Here we send a message each two seconds.
+	ros::Rate loop_rate(10); //1 message per second
+
+    sendCommand(command.c_str());
+    while(ros::ok())
     {
+        //create a wheelVel message
+        rover::WheelVel vel;
         if(count == 0)
         {
             tic();
             count++;
         }
-        sendCommand(command.c_str());
         computeVel();
+        //Publish the message
+        wheels_velocity_publisher.publish(vel);
+
         computeLR_PID();
         command = "#0P" + PIDToSSC(pidRight) + " #1P" + PIDToSSC(pidLeft);
         std::cout << command << std::endl;
@@ -220,6 +237,9 @@ int main(int argc, char **argv)
             count = 0;
             tempo = 0;
         }
+        ros::spinOnce(); // Need to call this function often to allow ROS to process incoming messages
+
+        loop_rate.sleep(); // Sleep for the rest of the cycle, to enforce the loop rate
     }
     
 
