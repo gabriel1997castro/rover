@@ -34,7 +34,7 @@
 
 //PID constants
 double kp = 1;
-double ki = 0;
+double ki = 1;
 double kd = 0;
  
 double currentTime, previousTime;
