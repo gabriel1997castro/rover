@@ -196,7 +196,7 @@ int main(int argc, char **argv)
     MAIN_MODULE_INIT(sensoray526_init());
     command = "#0 P1500 #1 P1500";
 
-    setPoint = 2;
+    setPoint = 2.5;
     int count = 0;
     float tempo;
     while(true)
