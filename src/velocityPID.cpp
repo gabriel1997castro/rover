@@ -214,8 +214,6 @@ int main(int argc, char **argv)
     sendCommand(command.c_str());
     while(ros::ok())
     {
-        //create a wheelVel message
-        rover::WheelVel vel;
         if(count == 0)
         {
             tic();
