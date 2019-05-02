@@ -118,10 +118,10 @@ float computePID(double inp)
     cumError += error * elapsedTime; // calcula integral
     rateError = (error - lastError)/elapsedTime; // calcula derivada
  
-    double out = kp*error + ki*cumError + kd*rateError; //PID output               
+    double out = kp*error + ki*cumError + kd*rateError; //Saída do PID               
  
-    lastError = error;                                //remember current error
-    previousTime = currentTime;                        //remember current time
+    lastError = error;                                // Guarda erro atual
+    previousTime = currentTime;                        //Guarda tempo atual
  
     return out;                                        //have function return the PID output
 }
@@ -201,7 +201,7 @@ int main(int argc, char **argv)
     float tempo;
     while(true)
     {
-        if(count = 0)
+        if(count == 0)
         {
             tic();
             count++;
