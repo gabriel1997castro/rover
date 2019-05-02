@@ -33,7 +33,7 @@
 #include <iostream>
 
 //PID constants
-double kp = 0.1;
+double kp = 1;
 double ki = 0;
 double kd = 0;
  
@@ -41,7 +41,7 @@ double currentTime, previousTime;
 double elapsedTime;
 double error;
 double lastError;
-double input, output, setPoint = 5;
+double input, output, setPoint = 3;
 double cumError, rateError;
 double pidLeft, pidRight;
 rover::WheelVel vel;
