@@ -233,9 +233,9 @@ int main(int argc, char **argv)
         sendCommand(command.c_str());
         tempo += toc();
         tic();
-        if(tempo >= 14000)
+        if(tempo >= 8)
         {
-            //setPoint *= -1;
+            setPoint *= 0;
             count = 0;
             tempo = 0;
         }
