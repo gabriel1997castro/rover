@@ -33,7 +33,7 @@
 #include <iostream>
 
 //PID constants
-double kp = 1;
+double kp = 0.1;
 double ki = 0;
 double kd = 0;
  
@@ -194,7 +194,7 @@ int main(int argc, char **argv)
     // robot module:
     printf("\n*** Iniciando o modulo sensoray526...");
     MAIN_MODULE_INIT(sensoray526_init());
-    command = "#0 P1600 #1 P1600";
+    command = "#0 P1500 #1 P1500";
     while(true)
     {
         sendCommand(command.c_str());
