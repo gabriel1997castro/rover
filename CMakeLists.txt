@@ -273,6 +273,16 @@ target_link_libraries(velocityPID
     ${catkin_LIBRARIES}
 )
 
+add_executable(testTri src/testTri.cpp src/SSC.c)
+add_dependencies(testTri serialcom)
+target_link_libraries(testTri
+    ${binary_dir}/${CMAKE_FIND_LIBRARY_PREFIXES}serialcomlib.so
+    -pthread
+    sensoray526
+    SSC
+    ${catkin_LIBRARIES}
+)
+
 add_executable(listener src/listener.cpp)
 target_link_libraries(listener ${catkin_LIBRARIES})
 add_dependencies(listener beginner_tutorials_generate_messages_cpp)
