@@ -151,7 +151,7 @@ void computeVel()
 	tic();
 
 	// Sleep
-	usleep(0000);
+	usleep(30000);
 
 	n0 = sensoray526_read_counter(0); //n of pulses encoder 0
 	n1 = -sensoray526_read_counter(1); //n of pulses encoder 1
