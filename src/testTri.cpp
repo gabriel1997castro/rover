@@ -204,11 +204,12 @@ int main(int argc, char **argv)
 
         inp.left_wheels = speed;
         inp.right_wheels = speed;
+        inp_velocity_publisher.publish(inp);
         command = "#0P" + PIDToSSC(inp.right_wheels) + " #1P" + PIDToSSC(inp.left_wheels);
         std::cout << command << std::endl;
         sendCommand(command.c_str());
-    
-        inp_velocity_publisher.publish(inp);
+        computeVel();        
+        wheels_velocity_publisher.publish(vel);
         ros::spinOnce(); // Need to call this function often to allow ROS to process incoming messages
 
         loop_rate.sleep(); // Sleep for the rest of the cycle, to enforce the loop rate
