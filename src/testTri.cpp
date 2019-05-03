@@ -32,17 +32,9 @@
 #include <sstream>
 #include <iostream>
 
-//PID constants
-double kp = 1;
-double ki = 0;
-double kd = 0;
+
  
-double currentTime, previousTime;
-double elapsedTime;
-double error;
-double lastError;
-double input, output, setPoint = 0;
-double cumError, rateError;
+
 //double pidLeft, pidRight;
 rover::WheelVel vel;
 rover::WheelVel pid;
@@ -109,32 +101,6 @@ void signalHandler(int signum)
 }
 //---------------------------------------------------------------------------------------------------------
 
-
-//
-float computePID(double inp)
-{
-    currentTime =  ros::Time::now().toSec(); // tempo atual
-    elapsedTime = (double)(currentTime - previousTime);//tempo gasto
-        
-    error = setPoint - inp; // determine error / proporcional
-    cumError += error * elapsedTime; // calcula integral
-    rateError = (error - lastError)/elapsedTime; // calcula derivada
- 
-    double out = kp*error + ki*cumError + kd*rateError; //Saída do PID               
- 
-    lastError = error;                                // Guarda erro atual
-    previousTime = currentTime;                        //Guarda tempo atual
- 
-    return out;                                        //have function return the PID output
-}
-
-float computeLR_PID()
-{
-    pid.left_wheels = computePID(vel.left_wheels);
-    pid.right_wheels = computePID(vel.right_wheels);
-}
-//---------------------------------------------------------------------------------------------------------
-
 // Calcula a velocidade das rodas em rad/s
 void computeVel()
 {
@@ -151,7 +117,7 @@ void computeVel()
 	tic();
 
 	// Sleep
-	usleep(30000);
+	usleep(4500);
 
 	n0 = sensoray526_read_counter(0); //n of pulses encoder 0
 	n1 = -sensoray526_read_counter(1); //n of pulses encoder 1
@@ -198,7 +164,6 @@ int main(int argc, char **argv)
     MAIN_MODULE_INIT(sensoray526_init());
     command = "#0 P1500 #1 P1500";
 
-    setPoint = 7;
     int count = 0;
     float tempo;
 
@@ -214,39 +179,36 @@ int main(int argc, char **argv)
     //ros::Publisher pid_velocity_publisher = n.advertise<rover::WheelVel>("pid_velocity", 10);
     ros::Publisher inp_velocity_publisher = n.advertise<rover::WheelVel>("inp_velocity", 10);
 	//Rate is a class the is used to define frequency for a loop. Here we send a message each two seconds.
-	ros::Rate loop_rate(10); //1 message per second
+	ros::Rate loop_rate(20); //1 message per second
 
     sendCommand(command.c_str());
     inp.left_wheels = 0;
     inp.right_wheels = 0;
     inp_velocity_publisher.publish(inp);
+    float speed = 0.0;
+    int k = 1;
     while(ros::ok())
     {
-        if(count == 0)
+        if(speed == 10.0 || speed == -10.0)
         {
-            tic();
-            count++;
+            k *= -1;
         }
-        computeVel();
-        //Publish the message
-        wheels_velocity_publisher.publish(vel);
+        if (k > 0)
+        {
+            speed += 0.125;
+        }
+        if (k < 0)
+        {
+            speed -=0.125;
+        }
 
-        computeLR_PID();
-        
-        command = "#0P" + PIDToSSC(pid.right_wheels) + " #1P" + PIDToSSC(pid.left_wheels);
+        inp.left_wheels = speed;
+        inp.right_wheels = speed;
+        command = "#0P" + PIDToSSC(inp.right_wheels) + " #1P" + PIDToSSC(inp.left_wheels);
         std::cout << command << std::endl;
         sendCommand(command.c_str());
-        tempo += toc();
-        tic();
-        if(tempo >= 6)
-        {
-            setPoint *= -1;
-            count = 0;
-            tempo = 0;
-            inp.left_wheels = setPoint;
-            inp.right_wheels = setPoint;
-            inp_velocity_publisher.publish(inp);
-        }
+    
+        inp_velocity_publisher.publish(inp);
         ros::spinOnce(); // Need to call this function often to allow ROS to process incoming messages
 
         loop_rate.sleep(); // Sleep for the rest of the cycle, to enforce the loop rate
