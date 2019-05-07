@@ -117,7 +117,7 @@ void computeVel()
 	tic();
 
 	// Sleep
-	usleep(4500);
+	usleep(9000);
 
 	n0 = sensoray526_read_counter(0); //n of pulses encoder 0
 	n1 = -sensoray526_read_counter(1); //n of pulses encoder 1
@@ -162,7 +162,7 @@ int main(int argc, char **argv)
     // robot module:
     printf("\n*** Iniciando o modulo sensoray526...");
     MAIN_MODULE_INIT(sensoray526_init());
-    command = "#0 P1500 #1 P1500";
+    command = "#6 P1500 #7 P1500";
 
     int count = 0;
     float tempo;
@@ -179,7 +179,7 @@ int main(int argc, char **argv)
     //ros::Publisher pid_velocity_publisher = n.advertise<rover::WheelVel>("pid_velocity", 10);
     ros::Publisher inp_velocity_publisher = n.advertise<rover::WheelVel>("inp_velocity", 10);
 	//Rate is a class the is used to define frequency for a loop. Here we send a message each two seconds.
-	ros::Rate loop_rate(20); //1 message per second
+	ros::Rate loop_rate(10); //1 message per second
 
     sendCommand(command.c_str());
     inp.left_wheels = 0;
@@ -205,7 +205,7 @@ int main(int argc, char **argv)
         inp.left_wheels = speed;
         inp.right_wheels = speed;
         inp_velocity_publisher.publish(inp);
-        command = "#0P" + PIDToSSC(inp.right_wheels) + " #1P" + PIDToSSC(inp.left_wheels);
+        command = "#6P" + PIDToSSC(inp.right_wheels) + " #7P" + PIDToSSC(inp.left_wheels);
         std::cout << command << std::endl;
         sendCommand(command.c_str());
         computeVel();        
