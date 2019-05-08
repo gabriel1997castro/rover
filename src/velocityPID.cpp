@@ -97,7 +97,7 @@ std::string ToString(T val)
 void signalHandler(int signum)
 {   
     std::string command;
-    command = "#6 P1500 #7 P1500";
+    command = "#8 P1500 #9 P1500";
 	sendCommand(command.c_str());
     std::cout << "Interrupt signal (" << signum << ") received.\n";
     printf("\n*** Encerrando o modulo sensoray526...");
@@ -196,7 +196,7 @@ int main(int argc, char **argv)
     // robot module:
     printf("\n*** Iniciando o modulo sensoray526...");
     MAIN_MODULE_INIT(sensoray526_init());
-    command = "#6 P1500 #7 P1500";
+    command = "#8 P1500 #9 P1500";
 
     setPoint = 7;
     int count = 0;
@@ -233,7 +233,7 @@ int main(int argc, char **argv)
 
         computeLR_PID();
         
-        command = "#6P" + PIDToSSC(pid.right_wheels) + " #7P" + PIDToSSC(pid.left_wheels);
+        command = "#8P" + PIDToSSC(pid.right_wheels) + " #9P" + PIDToSSC(pid.left_wheels);
         std::cout << command << std::endl;
         sendCommand(command.c_str());
         tempo += toc();

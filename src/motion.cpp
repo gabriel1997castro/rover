@@ -140,7 +140,7 @@ int main()
     signal(SIGINT, signalHandler);
 
 	//run
-	command = "#6 P1700 #7 P1700";
+	command = "#8 P1700 #9 P1700";
 	sendCommand(command.c_str());
 
 	/* Avoids memory swapping for this program */
@@ -153,7 +153,7 @@ int main()
 	computeVel();
 
 
-	command = "#6 P1500 #7 P1500";
+	command = "#8 P1500 #9 P1500";
 	sendCommand(command.c_str());
 	sleep(1);
 	computeVel();

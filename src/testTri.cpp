@@ -89,7 +89,7 @@ std::string ToString(T val)
 void signalHandler(int signum)
 {   
     std::string command;
-    command = "#0 P1500 #1 P1500";
+    command = "#8 P1500 #9 P1500";
 	sendCommand(command.c_str());
     std::cout << "Interrupt signal (" << signum << ") received.\n";
     printf("\n*** Encerrando o modulo sensoray526...");
@@ -162,7 +162,7 @@ int main(int argc, char **argv)
     // robot module:
     printf("\n*** Iniciando o modulo sensoray526...");
     MAIN_MODULE_INIT(sensoray526_init());
-    command = "#6 P1500 #7 P1500";
+    command = "#8 P1500 #9 P1500";
 
     int count = 0;
     float tempo;
@@ -189,7 +189,7 @@ int main(int argc, char **argv)
     int k = 1;
     while(ros::ok())
     {
-        if(speed == 10.0 || speed == -10.0)
+        if(speed >= 5.0 || speed <= -5.0)
         {
             k *= -1;
         }
@@ -205,7 +205,7 @@ int main(int argc, char **argv)
         inp.left_wheels = speed;
         inp.right_wheels = speed;
         inp_velocity_publisher.publish(inp);
-        command = "#6P" + PIDToSSC(inp.right_wheels) + " #7P" + PIDToSSC(inp.left_wheels);
+        command = "#8P" + PIDToSSC(inp.right_wheels) + " #9P" + PIDToSSC(inp.left_wheels);
         std::cout << command << std::endl;
         sendCommand(command.c_str());
         computeVel();        

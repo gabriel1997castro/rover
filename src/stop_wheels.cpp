@@ -5,7 +5,7 @@
 int main()
 {
 	std::string command;
-	command = "#6 P1500 #7 P1500";
+	command = "#8 P1500 #9 P1500";
 	sendCommand(command.c_str());
 	return 0;
 }
