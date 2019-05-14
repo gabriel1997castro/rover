@@ -33,14 +33,9 @@
 #include <iostream>
 
 //PID constants
-double kp = 0.073123;
-double ki = 2.7045;
-double kd = 0.00049427;
-//double kw = 2;
-//double kp = 1;
-//double ki = 0;
-//double kd = 0;
-
+double kp = -0.20787;
+double ki = -0.00013076;
+double kd = 0;
  
 double currentTime, previousTime;
 double elapsedTime;
@@ -49,12 +44,12 @@ double lastError;
 double input, output, setPoint = 0;
 double cumError, rateError;
 //double pidLeft, pidRight;
-rover::WheelVel vel, vel0;
+rover::WheelVel vel;
 rover::WheelVel pid;
 rover::WheelVel inp;
 
-#define SSC_MAX 1750
-#define SSC_MIN 1250
+#define SSC_MAX 2000
+#define SSC_MIN 1000
 
 // Definicoes internas:
 #define MAIN_MODULE_INIT(cmd_init)           \
@@ -130,8 +125,8 @@ float computePID(double inp)
     lastError = error;                                // Guarda erro atual
     previousTime = currentTime;                        //Guarda tempo atual
 
-    int ssc = (int)(25*out+1468);
-    if(ssc >= SSC_MAX || ssc <= SSC_MIN)
+    int ssc = -((int)(25*out+1500)) + 3000;
+    if(ssc >= SSC_MAX or ssc <= SSC_MIN)
     {
         cumError -= error * elapsedTime;
         out = kp*error + ki*cumError + kd*rateError;
@@ -149,107 +144,60 @@ float computePID(double inp)
         out = kp*error + ki*cumError + kd*rateError;
     }*/
  
-    return -out;                                        //have function return the PID output
+    return out;                                        //have function return the PID output
 }
 
 float computeLR_PID()
 {
     pid.left_wheels = computePID(vel.left_wheels);
-    //pid.right_wheels = computePID(vel.right_wheels);
+    pid.right_wheels = computePID(vel.right_wheels);
 }
 //---------------------------------------------------------------------------------------------------------
 
 // Calcula a velocidade das rodas em rad/s
 void computeVel()
 {
-    vel0 = vel;
 	float texec;
 	unsigned char counter = 0;
 	long n0 = 0;
 	long n1 = 0;
 
-    //Calcula para a roda direita:
-    sensoray526_configure_encoder(0);
-	sensoray526_reset_counter(0);
-    tic();
-	usleep(4000);
-    n0 = sensoray526_read_counter(0); //n of pulses encoder 0
-    texec = toc();
-    vel.right_wheels = (0.0020943952 * n0) / texec; // (2 * pi) / (100 cycles * 30) = const = 0.0020943952
-
-    //Calcula para a roda esquerda:
+	sensoray526_configure_encoder(0);
 	sensoray526_configure_encoder(1);
-    sensoray526_reset_counter(1);
-    tic();
-	usleep(4000);
-	n1 = -sensoray526_read_counter(1); //n of pulses encoder 1
-    texec = toc();
-	vel.left_wheels = (0.0020943952 * n1) / texec;
 
-    //Filtro de pico
-	if((vel0.right_wheels >= 0.5 || vel0.right_wheels <= -0.5) && (abs(vel.right_wheels) >= abs(4*vel0.right_wheels)))
-    {
-        printf("Pico1!!!\n");
-        vel.right_wheels = vel0.right_wheels;
-    }
-    if((vel0.left_wheels >= 0.5 || vel0.left_wheels <= -0.5) && (abs(vel.left_wheels) >= abs(5*vel0.left_wheels)))
-    {
-        printf("Pico2!!!\n");
-        vel.left_wheels = vel0.left_wheels;
-    }
+	sensoray526_reset_counter(0);
+	sensoray526_reset_counter(1);
+	tic();
+
+	// Sleep
+	usleep(9000);
+
+	n0 = sensoray526_read_counter(0); //n of pulses encoder 0
+	n1 = -sensoray526_read_counter(1); //n of pulses encoder 1
+	texec = toc();
+	vel.right_wheels = (0.0020943952 * n0) / texec; // (2 * pi) / (100 cycles * 30) = const = 0.0020943952
+    vel.left_wheels = (0.0020943952 * n1) / texec;
 }
 
 //---------------------------------------------------------------------------------------------------------
 
-//Conversões de intervalos [-1, 1] e [500 2500]
-std::string PIDToSSC_L(float value)
+int invEscale(int value)
 {
-    int ssc = (int)(25*value + 1468);
-    if (ssc >= SSC_MAX)
-    {
-        ssc = SSC_MAX;
-    }
-    if (ssc <= SSC_MIN)
-    {
-         ssc = SSC_MIN;
-    }
-
-    return ToString(ssc);
-    //Retira banda morta
-    if(ssc >= 1468)
-    {
-        ssc = ssc + 40;
-    }
-    else
-    {
-        ssc = ssc - 40;
-    }
-    return ToString(ssc);
+    return -value +3000;
 }
-
 //Conversões de intervalos [-1, 1] e [500 2500]
-std::string PIDToSSC_R(float value)
+std::string PIDToSSC(float value)
 {
-    int ssc = (int)(25*value + 1468);
-    if (ssc >= SSC_MAX)
+    int ssc = (int)(25*value+1500);
+    if (ssc > SSC_MAX)
     {
         ssc = SSC_MAX;
     }
-    if (ssc <= SSC_MIN)
+    if (ssc < SSC_MIN)
     {
          ssc = SSC_MIN;
     }
-
-    //Retira banda morta
-    if(ssc >= 1468)
-    {
-        ssc = ssc + 40;
-    }
-    else
-    {
-        ssc = ssc - 40;
-    }
-    return ToString(ssc);
+    return ToString(invEscale(ssc));
 }
 //---------------------------------------------------------------------------------------------------------
 
@@ -269,9 +217,9 @@ int main(int argc, char **argv)
     MAIN_MODULE_INIT(sensoray526_init());
     command = "#8 P1500 #9 P1500";
 
-    setPoint = 0.8;
+    setPoint = 15;
     int count = 0;
-    float tempo = 0;
+    float tempo;
 
 
     // Initiate new ROS node named "vel_pub"
@@ -293,21 +241,25 @@ int main(int argc, char **argv)
     inp_velocity_publisher.publish(inp);
     while(ros::ok())
     {
-       
+        if(count == 0)
+        {
+            tic();
+            count++;
+        }
         computeVel();
         //Publish the message
         wheels_velocity_publisher.publish(vel);
 
         computeLR_PID();
         
-        command = "#8P" + PIDToSSC_R(pid.right_wheels) + " #9P" + PIDToSSC_L(pid.left_wheels);
+        command = "#8P" + PIDToSSC(pid.right_wheels) + " #9P" + PIDToSSC(pid.left_wheels);
         std::cout << command << std::endl;
         sendCommand(command.c_str());
-        tempo += 0.1;
+        tempo += toc();
         tic();
-        if(tempo >= 5)
+        if(tempo >= 6)
         {
-            setPoint *=-1;
+            setPoint *= -1;
             count = 0;
             tempo = 0;
             inp.left_wheels = setPoint;

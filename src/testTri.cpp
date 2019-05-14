@@ -2,7 +2,7 @@
 /										                                                 /
 /----------------------------------------------------------------------------------------------------- /
 /  Autor : Gabriel Guimarães Almeida de Castro                                                         /
-/  Descrição:                                                                              /
+/  Descrição: Experimento para achar banda morta                                                                             /
 /-----------------------------------------------------------------------------------------------------*/
 
 // Bibliotecas
@@ -117,7 +117,7 @@ void computeVel()
 	tic();
 
 	// Sleep
-	usleep(9000);
+	usleep(8000);
 
 	n0 = sensoray526_read_counter(0); //n of pulses encoder 0
 	n1 = -sensoray526_read_counter(1); //n of pulses encoder 1
@@ -128,14 +128,10 @@ void computeVel()
 
 //---------------------------------------------------------------------------------------------------------
 
-int invEscale(int value)
-{
-    return -value +3000;
-}
 //Conversões de intervalos [-1, 1] e [500 2500]
 std::string PIDToSSC(float value)
 {
-    int ssc = (int)(25*value+1500);
+    int ssc = (int)(25*value+1468);
     if (ssc > SSC_MAX)
     {
         ssc = SSC_MAX;
@@ -144,7 +140,18 @@ std::string PIDToSSC(float value)
     {
          ssc = SSC_MIN;
     }
-    return ToString(invEscale(ssc));
+    //invert scale
+    //ssc = -ssc + 3000;
+    //ssc_global = ssc;
+    if(ssc >= 1468)
+    {
+        ssc = ssc + 40;
+    }
+    else
+    {
+        ssc = ssc - 40;
+    }
+    return ToString(ssc);
 }
 //---------------------------------------------------------------------------------------------------------
 

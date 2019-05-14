@@ -256,6 +256,7 @@ target_link_libraries(motion
 )
 
 add_executable(velocity src/velocity.cpp)
+add_dependencies(velocity serialcom WheelVel)
 target_link_libraries(velocity
     ${binary_dir}/${CMAKE_FIND_LIBRARY_PREFIXES}serialcomlib.so
     -pthread
@@ -263,9 +264,29 @@ target_link_libraries(velocity
     ${catkin_LIBRARIES}
 )
 
-add_executable(velocityPID src/velocityPID.cpp src/SSC.c)
-add_dependencies(velocityPID serialcom)
-target_link_libraries(velocityPID
+add_executable(velocityPID_0 src/velocityPID.cpp src/SSC.c)
+add_dependencies(velocityPID_0 serialcom WheelVel)
+target_link_libraries(velocityPID_0
+    ${binary_dir}/${CMAKE_FIND_LIBRARY_PREFIXES}serialcomlib.so
+    -pthread
+    sensoray526
+    SSC
+    ${catkin_LIBRARIES}
+)
+
+add_executable(squareWave src/squareWave.cpp src/SSC.c)
+add_dependencies(squareWave serialcom WheelVel)
+target_link_libraries(squareWave
+    ${binary_dir}/${CMAKE_FIND_LIBRARY_PREFIXES}serialcomlib.so
+    -pthread
+    sensoray526
+    SSC
+    ${catkin_LIBRARIES}
+)
+
+add_executable(mappingVel src/mappingVel-PWM.cpp src/SSC.c)
+add_dependencies(mappingVel serialcom WheelVel)
+target_link_libraries(mappingVel
     ${binary_dir}/${CMAKE_FIND_LIBRARY_PREFIXES}serialcomlib.so
     -pthread
     sensoray526
