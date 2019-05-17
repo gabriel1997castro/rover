@@ -108,6 +108,7 @@ int readEncoder(void)
 // Calcula a velocidade das rodas em rad/s
 void computeVel(int argc,char **argv)
 {
+   
 	float texec;
 	unsigned char counter = 0;
 	long n0 = 0;
@@ -119,35 +120,50 @@ void computeVel(int argc,char **argv)
     //create a node handle: it is reference assigned to a new node
 	ros::NodeHandle n;
     //create a publisher with a topic "wheels_velocity" that will send a String message
-	ros::Publisher wheels_velocity_publisher = n.advertise<rover::WheelVel>("wheels_velocity", 10);
+	ros::Publisher wheels_velocity_publisher = n.advertise<rover::WheelVel>("wheels_velocity_pub", 10);
 	//Rate is a class the is used to define frequency for a loop. Here we send a message each two seconds.
 	ros::Rate loop_rate(10); //1 message per second
 
 	sensoray526_configure_encoder(0);
 	sensoray526_configure_encoder(1);
+    rover::WheelVel vel, vel0;
 
 	while (ros::ok())
 	{
+         vel0 = vel;
         //create a wheelVel message
-        rover::WheelVel vel;
 		sensoray526_reset_counter(0);
 		sensoray526_reset_counter(1);
 		tic();
 
 		// Sleep
-		usleep(50000);
+		usleep(5000);
 
 		n0 = sensoray526_read_counter(0); //n of pulses encoder 0
 		n1 = -sensoray526_read_counter(1); //n of pulses encoder 1
 		texec = toc();
+
 		vel.right_wheels = (0.0020943952 * n0) / texec; // (2 * pi) / (100 cycles * 30) = const = 0.0020943952
         vel.left_wheels = (0.0020943952 * n1) / texec;
+
+        if((vel0.left_wheels >= 0.5 || vel0.left_wheels <= -0.5) && (abs(vel.left_wheels) >= abs(5*vel0.left_wheels)))
+        {
+            printf("Pico2!!!\n");
+            vel.left_wheels = vel0.left_wheels;
+        }   
+        if((vel0.right_wheels >= 0.5 || vel0.right_wheels <= -0.5) && (abs(vel.right_wheels) >= abs(5*vel0.right_wheels)))
+        {
+            printf("Pico1!!!\n");
+            vel.right_wheels = vel0.right_wheels;
+        }
+
         //Publish the message
         wheels_velocity_publisher.publish(vel);
 
         ros::spinOnce(); // Need to call this function often to allow ROS to process incoming messages
 
         loop_rate.sleep(); // Sleep for the rest of the cycle, to enforce the loop rate
+
 	}
 }
 

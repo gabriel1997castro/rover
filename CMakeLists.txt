@@ -274,35 +274,45 @@ target_link_libraries(velocityPID_0
     ${catkin_LIBRARIES}
 )
 
-add_executable(squareWave src/squareWave.cpp src/SSC.c)
-add_dependencies(squareWave serialcom WheelVel)
-target_link_libraries(squareWave
-    ${binary_dir}/${CMAKE_FIND_LIBRARY_PREFIXES}serialcomlib.so
-    -pthread
-    sensoray526
-    SSC
-    ${catkin_LIBRARIES}
-)
+#add_executable(velocityPID_1 src/testPID.cpp src/SSC.c)
+#add_dependencies(velocityPID_1 serialcom WheelVel)
+#target_link_libraries(velocityPID_1
+#    ${binary_dir}/${CMAKE_FIND_LIBRARY_PREFIXES}serialcomlib.so
+#    -pthread
+#    sensoray526
+#    SSC
+#    ${catkin_LIBRARIES}
+#)
 
-add_executable(mappingVel src/mappingVel-PWM.cpp src/SSC.c)
-add_dependencies(mappingVel serialcom WheelVel)
-target_link_libraries(mappingVel
-    ${binary_dir}/${CMAKE_FIND_LIBRARY_PREFIXES}serialcomlib.so
-    -pthread
-    sensoray526
-    SSC
-    ${catkin_LIBRARIES}
-)
+#add_executable(squareWave src/squareWave.cpp src/SSC.c)
+#add_dependencies(squareWave serialcom WheelVel)
+#target_link_libraries(squareWave
+#    ${binary_dir}/${CMAKE_FIND_LIBRARY_PREFIXES}serialcomlib.so
+#    -pthread
+#    sensoray526
+#    SSC
+#    ${catkin_LIBRARIES}
+#)
 
-add_executable(testTri src/testTri.cpp src/SSC.c)
-add_dependencies(testTri serialcom)
-target_link_libraries(testTri
-    ${binary_dir}/${CMAKE_FIND_LIBRARY_PREFIXES}serialcomlib.so
-    -pthread
-    sensoray526
-    SSC
-    ${catkin_LIBRARIES}
-)
+#add_executable(mappingVel src/mappingVel-PWM.cpp src/SSC.c)
+#add_dependencies(mappingVel serialcom WheelVel)
+#target_link_libraries(mappingVel
+#    ${binary_dir}/${CMAKE_FIND_LIBRARY_PREFIXES}serialcomlib.so
+#    -pthread
+#    sensoray526
+#    SSC
+#    ${catkin_LIBRARIES}
+#)
+
+#add_executable(testTri src/testTri.cpp src/SSC.c)
+#add_dependencies(testTri serialcom)
+#target_link_libraries(testTri
+#    ${binary_dir}/${CMAKE_FIND_LIBRARY_PREFIXES}serialcomlib.so
+#    -pthread
+#    sensoray526
+#    SSC
+#    ${catkin_LIBRARIES}
+#)
 
 #add_executable(listener src/listener.cpp)
 #target_link_libraries(listener ${catkin_LIBRARIES})

@@ -61,21 +61,21 @@ int sensoray526_init(void)
 		return 0;
 	}
 	
-	// #if (SENSORAY526_ENABLE_MUTEX)
-	// status = rt_mutex_create(&sensoray526_mutex,"Sensoray526Mutex");
-	// if (status != 0)
-	// {
-	// 	printf("    Criacao do mutex 'sensoray526_mutex' falhou: ");
-	// 	if(status == (-ENOMEM)) printf("-ENOMEM\n");
-	// 	if(status == (-EEXIST)) printf("-EEXIST\n");
-	// 	if(status == (-EPERM)) printf("-EPERM\n");
-	// 	status = rt_mutex_delete(&sensoray526_mutex);
-	// 	if (status != 0) {
-	// 		printf("    Falha na tentativa de deletar 'sensoray526_mutex'.\n");
-	// 	}
-	// 	return 0;
-	// }
-	// #endif
+	#if (SENSORAY526_ENABLE_MUTEX)
+	status = rt_mutex_create(&sensoray526_mutex,"Sensoray526Mutex");
+	if (status != 0)
+	{
+		printf("    Criacao do mutex 'sensoray526_mutex' falhou: ");
+		if(status == (-ENOMEM)) printf("-ENOMEM\n");
+		if(status == (-EEXIST)) printf("-EEXIST\n");
+		if(status == (-EPERM)) printf("-EPERM\n");
+		status = rt_mutex_delete(&sensoray526_mutex);
+		if (status != 0) {
+			printf("    Falha na tentativa de deletar 'sensoray526_mutex'.\n");
+		}
+		return 0;
+	}
+	#endif
 	
 /*	if (!request_region(sensoray526baseaddress, S526_IOSIZE, "s526")) {
 		printf("\n sensoray526_init: I/O port conflict");
@@ -99,9 +99,9 @@ int sensoray526_init(void)
 int sensoray526_close(void)
 {
 	// Procedimentos de encerramento
-	// #if (SENSORAY526_ENABLE_MUTEX)
-	// rt_mutex_delete(&sensoray526_mutex);
-	// #endif
+	#if (SENSORAY526_ENABLE_MUTEX)
+	rt_mutex_delete(&sensoray526_mutex);
+	#endif
 	// Retorna 
    	return 1; 
 }                      
@@ -138,30 +138,30 @@ unsigned int sensoray526_read_register(int registeroffset)
 
 int sensoray526_led_on(void)
 {
-	// #if (SENSORAY526_ENABLE_MUTEX)
-	// rt_mutex_acquire(&sensoray526_mutex,TM_INFINITE);
-	// #endif
+	#if (SENSORAY526_ENABLE_MUTEX)
+	rt_mutex_acquire(&sensoray526_mutex,TM_INFINITE);
+	#endif
 	
 	sensoray526_write_register(0x01, S526_REG_MSC);
 	
-	// #if (SENSORAY526_ENABLE_MUTEX)
-	// rt_mutex_release(&sensoray526_mutex);
-	// #endif
+	#if (SENSORAY526_ENABLE_MUTEX)
+	rt_mutex_release(&sensoray526_mutex);
+	#endif
 	
 	return 1;
 }
 
 int sensoray526_led_off(void)
 {
-	// #if (SENSORAY526_ENABLE_MUTEX)
-	// rt_mutex_acquire(&sensoray526_mutex,TM_INFINITE);
-	// #endif
+	#if (SENSORAY526_ENABLE_MUTEX)
+	rt_mutex_acquire(&sensoray526_mutex,TM_INFINITE);
+	#endif
 
 	sensoray526_write_register(0x00, S526_REG_MSC);
 	
-	// #if (SENSORAY526_ENABLE_MUTEX)
-	// rt_mutex_release(&sensoray526_mutex);
-	// #endif
+	#if (SENSORAY526_ENABLE_MUTEX)
+	rt_mutex_release(&sensoray526_mutex);
+	#endif
 	
 	return 1;
 }
@@ -174,9 +174,9 @@ int sensoray526_set_counter_preload(unsigned char counternumber, unsigned long v
 	unsigned char counter_offset_low=0;
 	unsigned char counter_offset_high=0;
 	
-	// #if (SENSORAY526_ENABLE_MUTEX)
-	// rt_mutex_acquire(&sensoray526_mutex,TM_INFINITE);
-	// #endif
+	#if (SENSORAY526_ENABLE_MUTEX)
+	rt_mutex_acquire(&sensoray526_mutex,TM_INFINITE);
+	#endif
 	
 	//Número do contador, entre 0-3
 	switch(counternumber)
@@ -198,9 +198,9 @@ int sensoray526_set_counter_preload(unsigned char counternumber, unsigned long v
 			counter_offset_high=S526_REG_C3H;
 			break;
 		default:
-			// #if (SENSORAY526_ENABLE_MUTEX)
-			// rt_mutex_release(&sensoray526_mutex);
-			// #endif
+			#if (SENSORAY526_ENABLE_MUTEX)
+			rt_mutex_release(&sensoray526_mutex);
+			#endif
 			return -1; //Erro! Out of range
 	}
 	
@@ -210,9 +210,9 @@ int sensoray526_set_counter_preload(unsigned char counternumber, unsigned long v
 	//High word (8 bits mais siginificativos)
 	sensoray526_write_register(((value24bits&0x00FF0000)>>16), counter_offset_high);
 	
-	// #if (SENSORAY526_ENABLE_MUTEX)
-	// rt_mutex_release(&sensoray526_mutex);
-	// #endif
+	#if (SENSORAY526_ENABLE_MUTEX)
+	rt_mutex_release(&sensoray526_mutex);
+	#endif
 	
 	return 1;
 }
@@ -224,9 +224,9 @@ int sensoray526_write_PR0(unsigned char counternumber)
 	//Endereços
 	unsigned char counter_offset=0;
 	
-	// #if (SENSORAY526_ENABLE_MUTEX)
-	// rt_mutex_acquire(&sensoray526_mutex,TM_INFINITE);
-	// #endif
+	#if (SENSORAY526_ENABLE_MUTEX)
+	rt_mutex_acquire(&sensoray526_mutex,TM_INFINITE);
+	#endif
 	
 	//Número do contador, entre 0-3
 	switch(counternumber)
@@ -244,17 +244,17 @@ int sensoray526_write_PR0(unsigned char counternumber)
 			counter_offset=S526_REG_C3M;
 			break;
 		default:
-			// #if (SENSORAY526_ENABLE_MUTEX)
-			// rt_mutex_release(&sensoray526_mutex);
-			// #endif
+			#if (SENSORAY526_ENABLE_MUTEX)
+			rt_mutex_release(&sensoray526_mutex);
+			#endif
 			return -1; //Erro! Out of range
 	}
 	
 	sensoray526_write_register(S526_REG_CxM_PRELOADREGISTER_PR0, counter_offset);
 
-	// #if (SENSORAY526_ENABLE_MUTEX)
-	// rt_mutex_release(&sensoray526_mutex);
-	// #endif
+	#if (SENSORAY526_ENABLE_MUTEX)
+	rt_mutex_release(&sensoray526_mutex);
+	#endif
 
 	return 1;
 }
@@ -266,9 +266,9 @@ int sensoray526_write_PR1(unsigned char counternumber)
 	//Endereços
 	unsigned char counter_offset=0;
 	
-	// #if (SENSORAY526_ENABLE_MUTEX)
-	// rt_mutex_acquire(&sensoray526_mutex,TM_INFINITE);
-	// #endif
+	#if (SENSORAY526_ENABLE_MUTEX)
+	rt_mutex_acquire(&sensoray526_mutex,TM_INFINITE);
+	#endif
 	
 	//Número do contador, entre 0-3
 	switch(counternumber)
@@ -286,17 +286,17 @@ int sensoray526_write_PR1(unsigned char counternumber)
 			counter_offset=S526_REG_C3M;
 			break;
 		default:
-			// #if (SENSORAY526_ENABLE_MUTEX)
-			// rt_mutex_release(&sensoray526_mutex);
-			// #endif
+			#if (SENSORAY526_ENABLE_MUTEX)
+			rt_mutex_release(&sensoray526_mutex);
+			#endif
 			return -1; //Erro! Out of range
 	}
 	
 	sensoray526_write_register(S526_REG_CxM_PRELOADREGISTER_PR1, counter_offset);
 
-	// #if (SENSORAY526_ENABLE_MUTEX)
-	// rt_mutex_release(&sensoray526_mutex);
-	// #endif
+	#if (SENSORAY526_ENABLE_MUTEX)
+	rt_mutex_release(&sensoray526_mutex);
+	#endif
 
 	return 1;
 }
@@ -309,9 +309,9 @@ int sensoray526_configure_encoder(unsigned char encodernumber)
 	unsigned char counter_mode_offset=0;
 	unsigned char counter_control_offset=0;
 	
-	// #if (SENSORAY526_ENABLE_MUTEX)
-	// rt_mutex_acquire(&sensoray526_mutex,TM_INFINITE);
-	// #endif
+	#if (SENSORAY526_ENABLE_MUTEX)
+	rt_mutex_acquire(&sensoray526_mutex,TM_INFINITE);
+	#endif
 	
 	//Número do contador, entre 0-3
 	switch(encodernumber)
@@ -333,9 +333,9 @@ int sensoray526_configure_encoder(unsigned char encodernumber)
 			counter_control_offset=S526_REG_C3C;
 			break;
 		default:
-			// #if (SENSORAY526_ENABLE_MUTEX)
-			// rt_mutex_release(&sensoray526_mutex);
-			// #endif
+			#if (SENSORAY526_ENABLE_MUTEX)
+			rt_mutex_release(&sensoray526_mutex);
+			#endif
 			return -1; //Erro! Out of range
 	}
 	
@@ -345,9 +345,9 @@ int sensoray526_configure_encoder(unsigned char encodernumber)
 	//Limpa os bits de erro. Ver Sensoray Model 526 Manual, página 27.
 	sensoray526_write_register(((1<<3)|(1<<1)|(1<<2)|(1<<0)), counter_control_offset);
 	
-	// #if (SENSORAY526_ENABLE_MUTEX)
-	// rt_mutex_release(&sensoray526_mutex);
-	// #endif
+	#if (SENSORAY526_ENABLE_MUTEX)
+	rt_mutex_release(&sensoray526_mutex);
+	#endif
 	
 	return 1;
 }
@@ -357,9 +357,9 @@ int sensoray526_reset_counter(unsigned char counternumber)
 	//Endereços
 	unsigned char counter_control_offset=0;
 	
-	// #if (SENSORAY526_ENABLE_MUTEX)
-	// rt_mutex_acquire(&sensoray526_mutex,TM_INFINITE);
-	// #endif
+	#if (SENSORAY526_ENABLE_MUTEX)
+	rt_mutex_acquire(&sensoray526_mutex,TM_INFINITE);
+	#endif
 	
 	//Número do contador, entre 0-3
 	switch(counternumber)
@@ -377,18 +377,18 @@ int sensoray526_reset_counter(unsigned char counternumber)
 			counter_control_offset=S526_REG_C3C;
 			break;
 		default:
-			// #if (SENSORAY526_ENABLE_MUTEX)
-			// rt_mutex_release(&sensoray526_mutex);
-			// #endif
+			#if (SENSORAY526_ENABLE_MUTEX)
+			rt_mutex_release(&sensoray526_mutex);
+			#endif
 			return -1; //Erro! Out of range
 	}
 	
 	//Reseta o contador. Ver Sensoray Model 526 Manual, página 27.
 	sensoray526_write_register(((1<<15)|(1<<3)|(1<<1)|(1<<2)|(1<<0)), counter_control_offset);
 	
-	// #if (SENSORAY526_ENABLE_MUTEX)
-	// rt_mutex_release(&sensoray526_mutex);
-	// #endif
+	#if (SENSORAY526_ENABLE_MUTEX)
+	rt_mutex_release(&sensoray526_mutex);
+	#endif
 	
 	return 1;
 }
@@ -401,9 +401,9 @@ long sensoray526_read_counter(unsigned char counternumber)
 	unsigned char counter_offset_low=0;
 	unsigned char counter_offset_high=0;
 	
-	// #if (SENSORAY526_ENABLE_MUTEX)
-	// rt_mutex_acquire(&sensoray526_mutex,TM_INFINITE);
-	// #endif
+	#if (SENSORAY526_ENABLE_MUTEX)
+	rt_mutex_acquire(&sensoray526_mutex,TM_INFINITE);
+	#endif
 	
 	//Variáveis temporárias
 	long low_result=0;
@@ -429,9 +429,9 @@ long sensoray526_read_counter(unsigned char counternumber)
 			counter_offset_high=S526_REG_C3H;
 			break;
 		default:
-			// #if (SENSORAY526_ENABLE_MUTEX)
-			// rt_mutex_release(&sensoray526_mutex);
-			// #endif
+			#if (SENSORAY526_ENABLE_MUTEX)
+			rt_mutex_release(&sensoray526_mutex);
+			#endif
 			return -1; //Erro! Out of range
 	}
 	
@@ -455,9 +455,9 @@ long sensoray526_read_counter(unsigned char counternumber)
 	
 	high_result=high_result<<16; //Torna a variável os bits mais significativos.
 	
-	// #if (SENSORAY526_ENABLE_MUTEX)
-	// rt_mutex_release(&sensoray526_mutex);
-	// #endif
+	#if (SENSORAY526_ENABLE_MUTEX)
+	rt_mutex_release(&sensoray526_mutex);
+	#endif
 	
 	return (low_result+high_result); //Retorna a leitura do contador (no caso, o encoder).
 }
@@ -468,9 +468,9 @@ int sensoray526_configure_AD(unsigned int channel)
 	//arquivo .h utilizando OU (|). Exemplo: habilitar canais 1 e 5
 	//sensoray526_configure_AD(S525_ADC_ENABLE_CHANNEL_1|S525_ADC_ENABLE_CHANNEL_5);
 	
-	// #if (SENSORAY526_ENABLE_MUTEX)
-	// rt_mutex_acquire(&sensoray526_mutex,TM_INFINITE);
-	// #endif
+	#if (SENSORAY526_ENABLE_MUTEX)
+	rt_mutex_acquire(&sensoray526_mutex,TM_INFINITE);
+	#endif
 	
 	if((channel&0x7FE0)==0) return -1; //Canais inválidos
 	
@@ -481,9 +481,9 @@ int sensoray526_configure_AD(unsigned int channel)
 	//Habilita interupção do AD
 	sensoray526_write_register((1<<2),S526_REG_IER);
 	
-	// #if (SENSORAY526_ENABLE_MUTEX)
-	// rt_mutex_release(&sensoray526_mutex);
-	// #endif
+	#if (SENSORAY526_ENABLE_MUTEX)
+	rt_mutex_release(&sensoray526_mutex);
+	#endif
 	
 	return 1;
 }
@@ -492,9 +492,9 @@ int sensoray526_perform_AD_conversion(void)
 {
 	//Executa a conversão analógica-digital de todos os canais configurados.
 	
-	// #if (SENSORAY526_ENABLE_MUTEX)
-	// rt_mutex_acquire(&sensoray526_mutex,TM_INFINITE);
-	// #endif
+	#if (SENSORAY526_ENABLE_MUTEX)
+	rt_mutex_acquire(&sensoray526_mutex,TM_INFINITE);
+	#endif
 	
 	//Inicia a conversão de todos os canais selecionados
 	sensoray526_write_register(sensoray526_current_AD_setting|S526_ADC_START,S526_REG_ADC);
@@ -502,9 +502,9 @@ int sensoray526_perform_AD_conversion(void)
 	//Espera fim da conversão
 	while(!(sensoray526_read_register(S526_REG_ISR)&0x0004));
 
-	// #if (SENSORAY526_ENABLE_MUTEX)
-	// rt_mutex_release(&sensoray526_mutex);
-	// #endif
+	#if (SENSORAY526_ENABLE_MUTEX)
+	rt_mutex_release(&sensoray526_mutex);
+	#endif
 	
 	return 1;
 }
@@ -512,9 +512,9 @@ int sensoray526_perform_AD_conversion(void)
 int sensoray526_read_AD_raw(unsigned char channel)
 {
 	//Faz a leitura do conversor AD, retornando o valor bruto.
-	// #if (SENSORAY526_ENABLE_MUTEX)
-	// rt_mutex_acquire(&sensoray526_mutex,TM_INFINITE);
-	// #endif
+	#if (SENSORAY526_ENABLE_MUTEX)
+	rt_mutex_acquire(&sensoray526_mutex,TM_INFINITE);
+	#endif
 	
 	//Variáveis internas
 	int ad_value=0;
@@ -529,9 +529,9 @@ int sensoray526_read_AD_raw(unsigned char channel)
 		ad_value=ad_value|0xFFFF0000; //Faz a extensão do último bit
 	}
 	
-	// #if (SENSORAY526_ENABLE_MUTEX)
-	// rt_mutex_release(&sensoray526_mutex);
-	// #endif
+	#if (SENSORAY526_ENABLE_MUTEX)
+	rt_mutex_release(&sensoray526_mutex);
+	#endif
 	
 	return ad_value;
 }

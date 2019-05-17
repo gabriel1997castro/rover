@@ -1,8 +1,8 @@
 /*-----------------------------------------------------------------------------------------------------/
-/										                                                 /
+/										     KYLE AND JESSE                                            /
 /----------------------------------------------------------------------------------------------------- /
 /  Autor : Gabriel Guimarães Almeida de Castro                                                         /
-/  Descrição:                                                                              /
+/  Descrição: PID to control velocity of wheels                                                        /
 /-----------------------------------------------------------------------------------------------------*/
 
 // Bibliotecas
@@ -32,22 +32,6 @@
 #include <sstream>
 #include <iostream>
 
-//PID constants
-double kp = 0.073123;
-double ki = 2.7045;
-double kd = 0.00049427;
-//double kw = 2;
-//double kp = 1;
-//double ki = 0;
-//double kd = 0;
-
- 
-double currentTime, previousTime;
-double elapsedTime;
-double error;
-double lastError;
-double input, output, setPoint = 0;
-double cumError, rateError;
 //double pidLeft, pidRight;
 rover::WheelVel vel, vel0;
 rover::WheelVel pid;
@@ -72,7 +56,22 @@ rover::WheelVel inp;
 // Definições para usar tic e toc pra cálculos de tempo
 //---------------------------------------------------------------------------------------------------------
 
-struct
+typedef struct PID
+{
+    double previousTime, currentTime;
+    double elapsedTime;
+    double error;
+    double lastError;
+    double input, output;
+    double cumError, rateError;
+    double setPoint;
+    //PID constants
+    double kp;
+    double ki;
+    double kd;
+} PID_t;
+    
+static struct
 {
     struct timeval time;
     struct timeval timereset;
@@ -88,6 +87,51 @@ double toc(void)
     gettimeofday(&tictocctrl.time, NULL);
     return ((tictocctrl.time.tv_sec - tictocctrl.timereset.tv_sec) + (tictocctrl.time.tv_usec - tictocctrl.timereset.tv_usec) * 1e-6);
 }
+
+static struct
+{
+    struct timeval time;
+    struct timeval timereset;
+} chronoVel;
+
+void chronoVelB(void) //chrono 0 begin
+{
+    gettimeofday(&chronoVel.timereset, NULL);
+}
+
+double chronoVelE(void) //chrono 0 end
+{
+    gettimeofday(&chronoVel.time, NULL);
+    return ((chronoVel.time.tv_sec - chronoVel.timereset.tv_sec) + (chronoVel.time.tv_usec - chronoVel.timereset.tv_usec) * 1e-6);
+}
+
+
+static struct
+{
+    struct timeval time;
+    struct timeval timereset;
+    int firstTime;
+} chronoPid;
+
+void chronoPidB(void) //chrono pid begin
+{
+    gettimeofday(&chronoPid.timereset, NULL);
+}
+
+double chronoPidE(void) //chrono pid end
+{
+    gettimeofday(&chronoPid.time, NULL);
+    return ((chronoPid.time.tv_sec - chronoPid.timereset.tv_sec) + (chronoPid.time.tv_usec - chronoPid.timereset.tv_usec) * 1e-6);
+}
+
+void firstPidTime(void)
+{
+    if (chronoPid.firstTime != 1)
+    {
+        chronoPidB();
+    }
+}
+
 
 //---------------------------------------------------------------------------------------------------------
 
@@ -116,54 +160,39 @@ void signalHandler(int signum)
 
 
 //
-float computePID(double inp)
+float computePID(double inp, PID_t *ptrPID)
 {
-    currentTime =  ros::Time::now().toSec(); // tempo atual
-    elapsedTime = (double)(currentTime - previousTime);//tempo gasto
+    ptrPID->currentTime =  ros::Time::now().toSec(); // tempo atual
+    ptrPID->elapsedTime = (double)(ptrPID->currentTime - ptrPID->previousTime);//tempo gasto
         
-    error = setPoint - inp; // determine error / proporcional
-    cumError += error * elapsedTime; // calcula integral
-    rateError = (error - lastError)/elapsedTime; // calcula derivada
+    ptrPID->error = ptrPID->setPoint - inp; // determine error / proporcional
+    ptrPID->cumError += ptrPID->error * ptrPID->elapsedTime; // calcula integral
+    ptrPID->rateError = (ptrPID->error - ptrPID->lastError)/ptrPID->elapsedTime; // calcula derivada
  
-    double out = kp*error + ki*cumError + kd*rateError; //Saída do PID               
- 
-    lastError = error;                                // Guarda erro atual
-    previousTime = currentTime;                        //Guarda tempo atual
+    double out = ptrPID->kp*ptrPID->error + ptrPID->ki*ptrPID->cumError + ptrPID->kd*ptrPID->rateError; //Saída do PID               
+    ptrPID->lastError = ptrPID->error;                                // Guarda erro atual
+    ptrPID->previousTime = ptrPID->currentTime;                        //Guarda tempo atual
 
-    int ssc = (int)(25*out+1468);
-    if(ssc >= SSC_MAX || ssc <= SSC_MIN)
+    int ssc = -((int)(25*out+1500)) + 3000;
+    if(ssc >= SSC_MAX or ssc <= SSC_MIN)
     {
-        cumError -= error * elapsedTime;
-        out = kp*error + ki*cumError + kd*rateError;
+        ptrPID->cumError -= ptrPID->error * ptrPID->elapsedTime;
+        out = ptrPID->kp*ptrPID->error + ptrPID->ki*ptrPID->cumError + ptrPID->kd*ptrPID->rateError;
     }
-    //int ssc = (int)(25*value+1500);
-    /*int ssc = -((int)(25*out+1500)) + 3000;
-    if(ssc >= SSC_MAX)
-    {
-        cumError = SSC_MAX;
-        out = kp*error + ki*cumError + kd*rateError;
-    }
-    if(ssc <= SSC_MIN)
-    {
-        cumError = SSC_MIN;
-        out = kp*error + ki*cumError + kd*rateError;
-    }*/
  
     return -out;                                        //have function return the PID output
 }
 
-float computeLR_PID()
+float computeLR_PID(PID_t *ptrPID_L, PID_t *ptrPID_R)
 {
-    pid.left_wheels = computePID(vel.left_wheels);
-    //pid.right_wheels = computePID(vel.right_wheels);
+    pid.left_wheels = computePID(vel.left_wheels,  ptrPID_L );
+    pid.right_wheels = computePID(vel.right_wheels, ptrPID_R);
 }
 //---------------------------------------------------------------------------------------------------------
 
-// Calcula a velocidade das rodas em rad/s
-void computeVel()
+void computeVel_R()
 {
-    vel0 = vel;
-	float texec;
+    double texec;
 	unsigned char counter = 0;
 	long n0 = 0;
 	long n1 = 0;
@@ -171,38 +200,57 @@ void computeVel()
     //Calcula para a roda direita:
     sensoray526_configure_encoder(0);
 	sensoray526_reset_counter(0);
-    tic();
-	usleep(4000);
+    chronoVelB();
+	usleep(100);
+
+    texec = chronoVelE();
     n0 = sensoray526_read_counter(0); //n of pulses encoder 0
-    texec = toc();
+    
     vel.right_wheels = (0.0020943952 * n0) / texec; // (2 * pi) / (100 cycles * 30) = const = 0.0020943952
+    //Filtro de pico
+	if((vel0.right_wheels >= 0.5 || vel0.right_wheels <= -0.5) && (abs(vel.right_wheels) >= abs(5*vel0.right_wheels)))
+    {
+        vel.right_wheels = vel0.right_wheels;
+    }
+}
+
+void computeVel_L()
+{
+    float texec;
+	unsigned char counter = 0;
+	long n0 = 0;
+	long n1 = 0;    
 
     //Calcula para a roda esquerda:
 	sensoray526_configure_encoder(1);
     sensoray526_reset_counter(1);
     tic();
-	usleep(4000);
+	usleep(100);
 	n1 = -sensoray526_read_counter(1); //n of pulses encoder 1
+    
     texec = toc();
+    
 	vel.left_wheels = (0.0020943952 * n1) / texec;
 
-    //Filtro de pico
-	if((vel0.right_wheels >= 0.5 || vel0.right_wheels <= -0.5) && (abs(vel.right_wheels) >= abs(4*vel0.right_wheels)))
-    {
-        printf("Pico1!!!\n");
-        vel.right_wheels = vel0.right_wheels;
-    }
+    
     if((vel0.left_wheels >= 0.5 || vel0.left_wheels <= -0.5) && (abs(vel.left_wheels) >= abs(5*vel0.left_wheels)))
     {
-        printf("Pico2!!!\n");
         vel.left_wheels = vel0.left_wheels;
     }
 }
 
+// Calcula a velocidade das rodas em rad/s
+void computeVel()
+{
+    vel0 = vel;
+    computeVel_L();
+    computeVel_R();
+}
+
 //---------------------------------------------------------------------------------------------------------
 
 //Conversões de intervalos [-1, 1] e [500 2500]
-std::string PIDToSSC_L(float value)
+std::string PIDToSSC(float value)
 {
     int ssc = (int)(25*value + 1468);
     if (ssc >= SSC_MAX)
@@ -216,7 +264,7 @@ std::string PIDToSSC_L(float value)
 
     return ToString(ssc);
     //Retira banda morta
-    if(ssc >= 1468)
+    /*if(ssc >= 1468)
     {
         ssc = ssc + 40;
     }
@@ -224,11 +272,11 @@ std::string PIDToSSC_L(float value)
     {
         ssc = ssc - 40;
     }
-    return ToString(ssc);
+    return ToString(ssc);*/
 }
 
 //Conversões de intervalos [-1, 1] e [500 2500]
-std::string PIDToSSC_R(float value)
+/*std::string PIDToSSC_R(float value)
 {
     int ssc = (int)(25*value + 1468);
     if (ssc >= SSC_MAX)
@@ -250,11 +298,25 @@ std::string PIDToSSC_R(float value)
         ssc = ssc - 40;
     }
     return ToString(ssc);
-}
+}*/
 //---------------------------------------------------------------------------------------------------------
 
 int main(int argc, char **argv)
 {
+    PID_t PID_L; //Pid left
+    PID_t *ptrPID_L;
+    PID_t PID_R; //Pid left
+    PID_t *ptrPID_R;
+    PID_L.kp = 0.073123;
+    PID_L.ki = 2.7045;
+    PID_L.kd = 0.00049427;
+
+    PID_R.kp = 0.073123;
+    PID_R.ki = 2.7045;
+    PID_R.kd = 0.00049427;
+    ptrPID_L = &PID_L;
+    ptrPID_R = &PID_R;
+
     std::string command;
     // Cadastra funções para encerrar o programa
     signal(SIGTERM, signalHandler);
@@ -269,7 +331,8 @@ int main(int argc, char **argv)
     MAIN_MODULE_INIT(sensoray526_init());
     command = "#8 P1500 #9 P1500";
 
-    setPoint = 0.8;
+    PID_L.setPoint = 4;
+    PID_R.setPoint = 4;
     int count = 0;
     float tempo = 0;
 
@@ -291,28 +354,32 @@ int main(int argc, char **argv)
     inp.left_wheels = 0;
     inp.right_wheels = 0;
     inp_velocity_publisher.publish(inp);
+    double temp;
+
     while(ros::ok())
     {
-       
+  
         computeVel();
+        
         //Publish the message
         wheels_velocity_publisher.publish(vel);
 
-        computeLR_PID();
+        computeLR_PID(ptrPID_L, ptrPID_R);
         
-        command = "#8P" + PIDToSSC_R(pid.right_wheels) + " #9P" + PIDToSSC_L(pid.left_wheels);
+        command = "#8P" + PIDToSSC(pid.right_wheels) + " #9P" + PIDToSSC(pid.left_wheels);
         std::cout << command << std::endl;
         sendCommand(command.c_str());
         tempo += 0.1;
-        tic();
         if(tempo >= 5)
         {
-            setPoint *=-1;
+            PID_L.setPoint *=-1;
+            PID_R.setPoint *=-1;
             count = 0;
             tempo = 0;
-            inp.left_wheels = setPoint;
-            inp.right_wheels = setPoint;
+            inp.left_wheels = PID_L.setPoint;
+            inp.right_wheels = PID_L.setPoint;
         }
+
         inp_velocity_publisher.publish(inp);
         ros::spinOnce(); // Need to call this function often to allow ROS to process incoming messages
 
