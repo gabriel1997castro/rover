@@ -5,7 +5,7 @@
 /  Descrição: PID to control velocity of wheels                                                        /
 /-----------------------------------------------------------------------------------------------------*/
 
-// Bibliotecas
+// Libraries
 #include <stdio.h>
 #include <unistd.h>
 #include <cstdlib>
@@ -31,14 +31,12 @@
 #include "rover/SSC.h"
 #include <sstream>
 #include <iostream>
+//---------------------------------------------------------------------------------------------------------
 
-//double pidLeft, pidRight;
-rover::WheelVel vel, vel0;
-rover::WheelVel pid;
-rover::WheelVel inp;
-
-#define SSC_MAX 1750
-#define SSC_MIN 1250
+// Defining max and min values to SSC pwm
+#define SSC_MAX 1800
+#define SSC_MIN 1200
+//---------------------------------------------------------------------------------------------------------
 
 // Definicoes internas:
 #define MAIN_MODULE_INIT(cmd_init)           \
@@ -52,10 +50,9 @@ rover::WheelVel inp;
     {                                         \
         printf("    Erro em %s", #cmd_close); \
     }
-
-// Definições para usar tic e toc pra cálculos de tempo
 //---------------------------------------------------------------------------------------------------------
 
+// PID variables
 typedef struct PID
 {
     double previousTime, currentTime;
@@ -70,7 +67,9 @@ typedef struct PID
     double ki;
     double kd;
 } PID_t;
-    
+//---------------------------------------------------------------------------------------------------------
+
+// Defining functions to calculate time    
 static struct
 {
     struct timeval time;
@@ -88,22 +87,23 @@ double toc(void)
     return ((tictocctrl.time.tv_sec - tictocctrl.timereset.tv_sec) + (tictocctrl.time.tv_usec - tictocctrl.timereset.tv_usec) * 1e-6);
 }
 
-static struct
+typedef struct
 {
     struct timeval time;
     struct timeval timereset;
-} chronoVel;
+    
+    void start(void) //chrono 0 begin
+    {
+        gettimeofday(&timereset, NULL);
+    }
 
-void chronoVelB(void) //chrono 0 begin
-{
-    gettimeofday(&chronoVel.timereset, NULL);
-}
+    double end(void) //chrono 0 end
+    {
+        gettimeofday(&time, NULL);
+        return ((time.tv_sec - timereset.tv_sec) + (time.tv_usec - timereset.tv_usec) * 1e-6);
+    }
+}my_timer_t;
 
-double chronoVelE(void) //chrono 0 end
-{
-    gettimeofday(&chronoVel.time, NULL);
-    return ((chronoVel.time.tv_sec - chronoVel.timereset.tv_sec) + (chronoVel.time.tv_usec - chronoVel.timereset.tv_usec) * 1e-6);
-}
 
 
 static struct
@@ -111,7 +111,7 @@ static struct
     struct timeval time;
     struct timeval timereset;
     int firstTime;
-} chronoPid;
+}chronoPid;
 
 void chronoPidB(void) //chrono pid begin
 {
@@ -134,6 +134,15 @@ void firstPidTime(void)
 
 
 //---------------------------------------------------------------------------------------------------------
+
+
+//double pidLeft, pidRight;
+rover::WheelVel vel, vel0;
+rover::WheelVel pid;
+rover::WheelVel inp;
+
+
+
 
 template <typename T>
 std::string ToString(T val)
@@ -174,7 +183,7 @@ float computePID(double inp, PID_t *ptrPID)
     ptrPID->previousTime = ptrPID->currentTime;                        //Guarda tempo atual
 
     int ssc = -((int)(25*out+1500)) + 3000;
-    if(ssc >= SSC_MAX or ssc <= SSC_MIN)
+    if(ssc >= SSC_MAX || ssc <= SSC_MIN)
     {
         ptrPID->cumError -= ptrPID->error * ptrPID->elapsedTime;
         out = ptrPID->kp*ptrPID->error + ptrPID->ki*ptrPID->cumError + ptrPID->kd*ptrPID->rateError;
@@ -196,14 +205,15 @@ void computeVel_R()
 	unsigned char counter = 0;
 	long n0 = 0;
 	long n1 = 0;
+    my_timer_t timer;
 
     //Calcula para a roda direita:
     sensoray526_configure_encoder(0);
 	sensoray526_reset_counter(0);
-    chronoVelB();
+    timer.start();
 	usleep(100);
 
-    texec = chronoVelE();
+    texec = timer.end();
     n0 = sensoray526_read_counter(0); //n of pulses encoder 0
     
     vel.right_wheels = (0.0020943952 * n0) / texec; // (2 * pi) / (100 cycles * 30) = const = 0.0020943952
@@ -219,16 +229,17 @@ void computeVel_L()
     float texec;
 	unsigned char counter = 0;
 	long n0 = 0;
-	long n1 = 0;    
+	long n1 = 0;   
+    my_timer_t timer; 
 
     //Calcula para a roda esquerda:
 	sensoray526_configure_encoder(1);
     sensoray526_reset_counter(1);
-    tic();
+    timer.start();
 	usleep(100);
 	n1 = -sensoray526_read_counter(1); //n of pulses encoder 1
     
-    texec = toc();
+    texec = timer.end();
     
 	vel.left_wheels = (0.0020943952 * n1) / texec;
 
@@ -331,7 +342,7 @@ int main(int argc, char **argv)
     MAIN_MODULE_INIT(sensoray526_init());
     command = "#8 P1500 #9 P1500";
 
-    PID_L.setPoint = 4;
+    PID_L.setPoint = 2;
     PID_R.setPoint = 4;
     int count = 0;
     float tempo = 0;
@@ -353,7 +364,7 @@ int main(int argc, char **argv)
     sendCommand(command.c_str());
     inp.left_wheels = 0;
     inp.right_wheels = 0;
-    inp_velocity_publisher.publish(inp);
+
     double temp;
 
     while(ros::ok())
@@ -377,7 +388,7 @@ int main(int argc, char **argv)
             count = 0;
             tempo = 0;
             inp.left_wheels = PID_L.setPoint;
-            inp.right_wheels = PID_L.setPoint;
+            inp.right_wheels = PID_R.setPoint;
         }
 
         inp_velocity_publisher.publish(inp);
