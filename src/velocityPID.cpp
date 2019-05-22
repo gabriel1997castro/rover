@@ -31,6 +31,7 @@
 #include "rover/SSC.h"
 #include <sstream>
 #include <iostream>
+#include <geometry_msgs/Twist.h>
 //---------------------------------------------------------------------------------------------------------
 
 // Defining max and min values to SSC pwm
@@ -140,19 +141,13 @@ void firstPidTime(void)
 rover::WheelVel vel, vel0;
 rover::WheelVel pid;
 rover::WheelVel inp;
+int z_ang = 0;
+int x_lin = 0;
 
-void WheelsVelocityCallback(geometry_msgs::Twist vel_msg, PID_t *ptrPID_L, PID_t *ptrPID_R)
+void WheelsVelocityCallback(geometry_msgs::Twist vel_msg)
 {
-    if(vel_msg.x != 0)
-    {
-        ptrPID_L->setPoint = 1.5*vel_msg.x;
-        ptrPID_R->setPoint = 1.5*vel_msg.x;
-    }
-    if(vel_msg.z != 0)
-    {
-        ptrPID_L->setPoint = 1.5*vel_msg.z ;
-        ptrPID_R->setPoint = -1.5*vel_msg.z;
-    }
+    x_lin = vel_msg.linear.x;
+    z_ang = vel_msg.angular.z;
 }
 
 
@@ -355,8 +350,8 @@ int main(int argc, char **argv)
     MAIN_MODULE_INIT(sensoray526_init());
     command = "#8 P1500 #9 P1500";
 
-    PID_L.setPoint = 2;
-    PID_R.setPoint = 4;
+    PID_L.setPoint = 3;
+    PID_R.setPoint = 3;
     int count = 0;
     float tempo = 0;
 
@@ -373,6 +368,7 @@ int main(int argc, char **argv)
     ros::Publisher inp_velocity_publisher = n.advertise<rover::WheelVel>("inp_velocity", 10);
 	//Rate is a class the is used to define frequency for a loop. Here we send a message each two seconds.
 	ros::Rate loop_rate(10); //10 messages per second
+    ros::Subscriber sub = n.subscribe("/turtle1/cmd_vel", 10, WheelsVelocityCallback);
 
     sendCommand(command.c_str());
     inp.left_wheels = 0;
@@ -384,7 +380,26 @@ int main(int argc, char **argv)
     {
   
         computeVel();
-        
+        if(x_lin != 0)
+        {
+            PID_L.setPoint = 1.5*x_lin;
+            PID_R.setPoint = 1.5*x_lin;
+        }
+        else
+        {
+            PID_L.setPoint = 0;
+            PID_R.setPoint = 0; 
+        }
+        if(z_ang != 0)
+        {
+            PID_L.setPoint = 1.5*z_ang ;
+            PID_R.setPoint = -1.5*z_ang;
+        }
+        else
+        {
+            PID_L.setPoint = 0;
+            PID_R.setPoint = 0; 
+        }
         //Publish the message
         wheels_velocity_publisher.publish(vel);
 
@@ -394,11 +409,9 @@ int main(int argc, char **argv)
         std::cout << command << std::endl;
         sendCommand(command.c_str());
         tempo += 0.1;
-        if(tempo >= 5)
+        if(tempo >= 0.6)
         {
-            ros::Subscriber sub = node.subscribe("/turtle1/cmd_vel", 10, WheelsVelocityCallback);
-            PID_L.setPoint *=-1;
-            PID_R.setPoint *=-1;
+            
             count = 0;
             tempo = 0;
             inp.left_wheels = PID_L.setPoint;
