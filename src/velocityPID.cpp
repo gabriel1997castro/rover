@@ -141,7 +141,19 @@ rover::WheelVel vel, vel0;
 rover::WheelVel pid;
 rover::WheelVel inp;
 
-
+void WheelsVelocityCallback(geometry_msgs::Twist vel_msg, PID_t *ptrPID_L, PID_t *ptrPID_R)
+{
+    if(vel_msg.x != 0)
+    {
+        ptrPID_L->setPoint = 1.5*vel_msg.x;
+        ptrPID_R->setPoint = 1.5*vel_msg.x;
+    }
+    if(vel_msg.z != 0)
+    {
+        ptrPID_L->setPoint = 1.5*vel_msg.z ;
+        ptrPID_R->setPoint = -1.5*vel_msg.z;
+    }
+}
 
 
 template <typename T>
@@ -316,7 +328,7 @@ int main(int argc, char **argv)
 {
     PID_t PID_L; //Pid left
     PID_t *ptrPID_L;
-    PID_t PID_R; //Pid left
+    PID_t PID_R; //Pid right
     PID_t *ptrPID_R;
     PID_L.kp = 0.073123;
     PID_L.ki = 2.7045;
@@ -328,6 +340,7 @@ int main(int argc, char **argv)
     ptrPID_L = &PID_L;
     ptrPID_R = &PID_R;
 
+    geometry_msgs::Twist vel_msg;
     std::string command;
     // Cadastra funções para encerrar o programa
     signal(SIGTERM, signalHandler);
@@ -383,6 +396,7 @@ int main(int argc, char **argv)
         tempo += 0.1;
         if(tempo >= 5)
         {
+            ros::Subscriber sub = node.subscribe("/turtle1/cmd_vel", 10, WheelsVelocityCallback);
             PID_L.setPoint *=-1;
             PID_R.setPoint *=-1;
             count = 0;
