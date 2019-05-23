@@ -34,12 +34,12 @@
 #include <geometry_msgs/Twist.h>
 //---------------------------------------------------------------------------------------------------------
 
-// Defining max and min values to SSC pwm
+// Define max and min values to SSC pwm
 #define SSC_MAX 1800
 #define SSC_MIN 1200
 //---------------------------------------------------------------------------------------------------------
 
-// Definicoes internas:
+//
 #define MAIN_MODULE_INIT(cmd_init)           \
     if (cmd_init == 0)                       \
     {                                        \
@@ -71,7 +71,7 @@ typedef struct PID
 //---------------------------------------------------------------------------------------------------------
 
 // Defining functions to calculate time    
-static struct
+/*static struct
 {
     struct timeval time;
     struct timeval timereset;
@@ -87,7 +87,7 @@ double toc(void)
     gettimeofday(&tictocctrl.time, NULL);
     return ((tictocctrl.time.tv_sec - tictocctrl.timereset.tv_sec) + (tictocctrl.time.tv_usec - tictocctrl.timereset.tv_usec) * 1e-6);
 }
-
+*/
 typedef struct
 {
     struct timeval time;
@@ -162,7 +162,7 @@ std::string ToString(T val)
 void signalHandler(int signum)
 {   
     std::string command;
-    command = "#8 P1500 #9 P1500";
+    command = "#8P1500 #9P1500";
 	sendCommand(command.c_str());
     std::cout << "Interrupt signal (" << signum << ") received.\n";
     printf("\n*** Encerrando o modulo sensoray526...");
@@ -282,7 +282,7 @@ std::string PIDToSSC(float value)
 
     return ToString(ssc);
     //Retira banda morta
-    /*if(ssc >= 1468)
+    if(ssc >= 1468)
     {
         ssc = ssc + 40;
     }
@@ -290,7 +290,7 @@ std::string PIDToSSC(float value)
     {
         ssc = ssc - 40;
     }
-    return ToString(ssc);*/
+    return ToString(ssc);
 }
 
 //Conversões de intervalos [-1, 1] e [500 2500]
@@ -357,7 +357,7 @@ int main(int argc, char **argv)
 
 
     // Initiate new ROS node named "vel_pub"
-	ros::init(argc, argv, "vel_pub");
+	ros::init(argc, argv, "vel_pub",ros::init_options::NoSigintHandler);
 
     //create a node handle: it is reference assigned to a new node
 	ros::NodeHandle n;
@@ -385,21 +385,21 @@ int main(int argc, char **argv)
             PID_L.setPoint = 1.5*x_lin;
             PID_R.setPoint = 1.5*x_lin;
         }
-        else
+        if(x_lin == 0 && z_ang == 0)
         {
             PID_L.setPoint = 0;
             PID_R.setPoint = 0; 
         }
         if(z_ang != 0)
         {
-            PID_L.setPoint = 1.5*z_ang ;
-            PID_R.setPoint = -1.5*z_ang;
+            PID_L.setPoint = -1.5*z_ang ;
+            PID_R.setPoint = 1.5*z_ang;
         }
-        else
-        {
-            PID_L.setPoint = 0;
-            PID_R.setPoint = 0; 
-        }
+        if(z_ang != 0 && x_lin != 0)
+	{
+	    PID_L.setPoint = 0;
+            PID_R.setPoint = 0;
+	}
         //Publish the message
         wheels_velocity_publisher.publish(vel);
 
@@ -408,8 +408,8 @@ int main(int argc, char **argv)
         command = "#8P" + PIDToSSC(pid.right_wheels) + " #9P" + PIDToSSC(pid.left_wheels);
         std::cout << command << std::endl;
         sendCommand(command.c_str());
-        tempo += 0.1;
-        if(tempo >= 0.6)
+        /*tempo += 0.1;
+        if(tempo >= 0.5)
         {
             
             count = 0;
@@ -417,6 +417,7 @@ int main(int argc, char **argv)
             inp.left_wheels = PID_L.setPoint;
             inp.right_wheels = PID_R.setPoint;
         }
+	*/
 
         inp_velocity_publisher.publish(inp);
         ros::spinOnce(); // Need to call this function often to allow ROS to process incoming messages
