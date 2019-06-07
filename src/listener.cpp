@@ -1,6 +1,6 @@
 /*
- * Author: Anis Koubaa for Gaitech EDU
- * Year: 2016
+ * Author: Gabriel Guimarães Almeida de Castro
+ * 
  *
  */
 
@@ -15,6 +15,10 @@ void WheelsVelocityCallback(const rover::WheelVel vel)
 
 int main(int argc, char **argv)
 {
+    rover::WheelVel vel;
+    rover::WheelVel *ptrVel;
+    ptrVel = &vel
+
     // Initiate a new ROS node named "listener"
 	ros::init(argc, argv, "listener_vel");
 	//create a node handle: it is reference assigned to a new node

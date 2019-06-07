@@ -39,7 +39,8 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
   message_generation
-  rosbag  
+  rosbag
+  tf
 )
 
 ## System dependencies are found with CMake's conventions
@@ -133,7 +134,7 @@ geometry_msgs#   std_msgs
 catkin_package(
 INCLUDE_DIRS include
 LIBRARIES Rover
-CATKIN_DEPENDS geometry_msgs roscpp std_msgs message_runtime rosbag
+CATKIN_DEPENDS geometry_msgs roscpp std_msgs message_runtime rosbag nav_msgs tf
 DEPENDS system_lib
 )
 
@@ -274,6 +275,12 @@ target_link_libraries(velocityPID_0
     ${catkin_LIBRARIES}
 )
 
+add_executable(odometry src/odometry.cpp)
+add_dependencies(odometry WheelVel)
+target_link_libraries(odometry
+    -pthread
+    ${catkin_LIBRARIES}
+)
 #add_executable(velocityPID_1 src/testPID.cpp src/SSC.c)
 #add_dependencies(velocityPID_1 serialcom WheelVel)
 #target_link_libraries(velocityPID_1
