@@ -17,8 +17,8 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "odometry_publisher");
 
     ros::NodeHandle n;
-    ros::Publisher odom_pub = n.advertise<nav_msgs::Odometry>("odom", 50);
-    ros::Subscriber sub = n.subscribe("wheels_velocity", 10, WheelsVelocityCallback);
+    ros::Publisher odom_pub = n.advertise<nav_msgs::Odometry>("odom", 20);
+    ros::Subscriber sub = n.subscribe("wheels_velocity", 20, WheelsVelocityCallback);
 
     tf::TransformBroadcaster odom_broadcaster;
 
@@ -36,7 +36,7 @@ int main(int argc, char **argv)
     current_time = ros::Time::now();
     last_time = ros::Time::now();
 
-    ros::Rate r(4.0);
+    ros::Rate r(10.0);
     while (n.ok())
     {
         Vs = (Gvel.left_wheels + Gvel.right_wheels)/2;
